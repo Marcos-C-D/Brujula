@@ -1,0 +1,22 @@
+# Compilación
+build/
+.gradle/
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Secretos: NUNCA deben subirse al repositorio
+local.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+.env
+.env.*
+.git-credentials
+.netrc
