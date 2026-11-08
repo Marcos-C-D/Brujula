@@ -28,6 +28,6 @@ Ver [`CHANGELOG.md`](CHANGELOG.md) y [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.
 1. Se genera un ZIP versionado (`Brujula-faseN-vX.Y.Z.zip`).
 2. `bash subir-brujula.sh ruta/al.zip` valida, sincroniza, hace commit y push.
 3. GitHub Actions ejecuta las pruebas y compila el APK.
-4. El APK se descarga desde la pestaña **Actions → ejecución → Artifacts**.
+4. El APK firmado (siempre con la misma clave) se descarga desde **Actions → ejecución → Artifacts**.
 
 Primera configuración paso a paso: [`docs/CONFIGURACION.md`](docs/CONFIGURACION.md).

@@ -179,7 +179,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
   OLD_COUNT=0
   if [ -d "$REPO_DIR/.git" ] && [ -f "$REPO_DIR/$MANIFEST" ]; then
     LC_ALL=C sort "$REPO_DIR/$MANIFEST" > "$TMP/old.list"
-    OLD_COUNT="$(comm -23 "$TMP/old.list" "$NEW_LIST" | wc -l | tr -d ' ')"
+    OLD_COUNT="$(LC_ALL=C comm -23 "$TMP/old.list" "$NEW_LIST" | wc -l | tr -d ' ')"
   fi
   echo "    Archivos en el ZIP:                $NEW_COUNT"
   echo "    Se eliminarían (de subidas previas): $OLD_COUNT"
@@ -235,7 +235,7 @@ fi
 # ---------- 5. sincronizar -------------------------------------------------
 NEED_ROLLBACK=1
 REMOVED_LIST="$TMP/removed.list"
-comm -23 "$OLD_LIST" "$NEW_LIST" > "$REMOVED_LIST"
+LC_ALL=C comm -23 "$OLD_LIST" "$NEW_LIST" > "$REMOVED_LIST"
 REMOVED_COUNT="$(wc -l < "$REMOVED_LIST" | tr -d ' ')"
 while IFS= read -r f; do
   [ -n "$f" ] || continue

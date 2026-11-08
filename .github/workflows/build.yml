@@ -38,31 +38,32 @@ jobs:
       - name: Ejecutar pruebas
         run: gradle --no-daemon --stacktrace test
 
-      - name: Preparar firma (solo si hay secretos configurados)
-        id: firma
+      # La firma es OBLIGATORIA: así todos los APK llevan siempre la misma firma y se pueden
+      # instalar unos sobre otros. Sin los secretos, el workflow falla a propósito.
+      - name: Preparar firma
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/brujula.jks"
-            echo "firmar=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "firmar=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Sin KEYSTORE_BASE64: se generará un APK DEBUG (firma de depuración)."
+          faltan=""
+          for v in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then faltan="$faltan $v"; fi
+          done
+          if [ -n "$faltan" ]; then
+            echo "::error::Faltan secretos de firma:$faltan. Ejecuta tools/crear-firma.sh (ver docs/CONFIGURACION.md)."
+            exit 1
           fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/brujula.jks"
 
       - name: Compilar APK release firmado
-        if: steps.firma.outputs.firmar == 'true'
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/brujula.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle --no-daemon --stacktrace :app:assembleRelease
-
-      - name: Compilar APK debug (sin firma propia)
-        if: steps.firma.outputs.firmar != 'true'
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
 
       - name: Publicar APK
         uses: actions/upload-artifact@v4

@@ -19,7 +19,7 @@ el script usa lo que git ya tiene configurado y nunca imprime ni guarda tokens.
 ## 2. Subir el primer ZIP
 
 ```bash
-bash subir-brujula.sh ~/Downloads/Brujula-fase0-v0.0.1.zip
+bash subir-brujula.sh ~/Downloads/Brujula-fase0-v0.0.3.zip
 ```
 
 - Si `~/Projects/Brujula` no existe, lo clona (el repositorio remoto puede estar vacío).
@@ -34,42 +34,41 @@ Seguridad del script:
 - Si el ZIP fuera a sobrescribir archivos ajenos, se detiene (salvo `--force`).
 - Si falla algo antes del commit, deshace los cambios locales.
 
-## 3. Primera compilación
+## 3. Firma propia del APK (obligatoria, una sola vez)
 
-En GitHub: **Actions → Compilar Brújula**. Al terminar, el APK está en **Artifacts**
-(el artefacto se descarga como un ZIP que contiene el `.apk`).
+Android solo deja instalar una versión **encima de otra** si ambas están firmadas con la misma clave.
+Si cada compilación usara una clave distinta (como hacen los APK "debug" que genera GitHub en cada
+ejecución), aparecería el error `INSTALL_FAILED_UPDATE_INCOMPATIBLE`.
 
-> Sin secretos de firma, se genera un APK **debug**. Un APK debug y uno firmado con tu
-> clave propia **no se pueden instalar uno encima del otro** (Android obliga a desinstalar).
-> Para no perder datos más adelante, **configura la firma (apartado 4) antes de instalar
-> la app por primera vez** en tu móvil.
-
-## 4. Firma propia del APK (keystore)
-
-### 4.1 Generar el keystore (en tu PC)
+Por eso el workflow **exige una firma fija** y falla si no está configurada. Para crearla:
 
 ```bash
-keytool -genkeypair -v -keystore brujula-release.jks -alias brujula \
-        -keyalg RSA -keysize 4096 -validity 10000
+bash tools/crear-firma.sh
 ```
 
-Te pedirá una contraseña y datos del certificado (pueden ser genéricos). Con el formato
-PKCS12 actual, **la contraseña de la clave es la misma que la del keystore**.
+Qué hace:
+- Genera `~/.brujula-firma/brujula-release.jks` con una contraseña aleatoria (`contrasena.txt`, solo legible por ti).
+- Sube a GitHub los secretos `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD` y `KEY_ALIAS` mediante `gh`,
+  sin mostrar ningún valor.
+- Si el keystore ya existe **no lo regenera**: solo vuelve a subir los secretos.
+- Muestra la huella SHA-256 de tu firma.
 
-Guarda `brujula-release.jks` y la contraseña en un lugar seguro **fuera del repositorio**
-(gestor de contraseñas y una copia de seguridad del archivo). **Si pierdes el keystore no podrás
-actualizar la app instalada**: habría que desinstalarla y se perderían sus datos locales.
+**Haz copia de seguridad de `~/.brujula-firma/`** (pendrive o gestor de contraseñas) y no la subas a ningún
+repositorio. Si la pierdes, tendrás que desinstalar la app (se pierden sus datos locales) para instalar una
+firmada con otra clave.
 
-### 4.2 Guardar los secretos en GitHub (sin escribirlos en ningún archivo)
+## 4. Compilar e instalar
+
+En GitHub: **Actions → Compilar Brújula**. Al terminar, el APK firmado está en **Artifacts**
+(se descarga como un ZIP que contiene `app-release.apk`).
 
 ```bash
-base64 -w0 brujula-release.jks | gh secret set KEYSTORE_BASE64 --repo Marcos-C-D/Brujula
-gh secret set KEYSTORE_PASSWORD --repo Marcos-C-D/Brujula   # te pide el valor (oculto)
-gh secret set KEY_PASSWORD      --repo Marcos-C-D/Brujula   # la misma contraseña
-gh secret set KEY_ALIAS         --repo Marcos-C-D/Brujula   # valor: brujula
+adb install -r app-release.apk
 ```
 
-En la siguiente ejecución, el workflow compilará `assembleRelease` firmado.
+Si ya tienes instalada una versión firmada con **otra** clave (por ejemplo un APK debug anterior),
+desinstálala una única vez: `adb uninstall app.brujula`. A partir de entonces, `adb install -r` actualiza
+conservando los datos.
 
 ## 5. Termux (más adelante)
 
