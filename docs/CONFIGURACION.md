@@ -19,7 +19,7 @@ el script usa lo que git ya tiene configurado y nunca imprime ni guarda tokens.
 ## 2. Subir el primer ZIP
 
 ```bash
-bash subir-brujula.sh ~/Downloads/Brujula-fase0-v0.0.3.zip
+bash subir-brujula.sh ~/Downloads/Brujula-fase1-v0.1.0.zip
 ```
 
 - Si `~/Projects/Brujula` no existe, lo clona (el repositorio remoto puede estar vacío).

@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.1.0 · Fase 1 · núcleo financiero
+- `core-model`: `Money` (ahora con igualdad que ignora la escala), `Units`, `AccountId`, `AssetId`.
+- Nuevo módulo `core-engine`: libro de movimientos inmutable, lotes con FIFO exacto, estado derivado de
+  los eventos, auditor independiente, planificador de ingresos mensuales y gestión de cuentas
+  independientes (`Bank`): crear, renombrar, archivar, restaurar y eliminar.
+- 59 pruebas automáticas (incluye 3.000 operaciones aleatorias auditadas y concurrencia).
+- Pendiente para la siguiente fase: persistencia en Room y copias de seguridad JSON/CSV.
+
 ## 0.0.3 · Fase 0 · firma fija obligatoria
 - Nuevo `tools/crear-firma.sh`: crea el keystore propio y sube los secretos de firma a GitHub.
 - El workflow exige los secretos y compila siempre `app-release.apk` firmado con la misma clave

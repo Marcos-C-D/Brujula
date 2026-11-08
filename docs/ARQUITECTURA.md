@@ -14,11 +14,11 @@
 ## Módulos
 | Módulo | Responsabilidad | Estado |
 |---|---|---|
-| `core-model` | Tipos puros: dinero, activos, cuentas | Fase 0 (solo `Money`) |
-| `core-engine` | Órdenes, liquidaciones, cartera, FIFO, estadísticas | Fase 1 y 3 |
+| `core-model` | Tipos puros: dinero, unidades, identificadores | Hecho (fase 1) |
+| `core-engine` | Libro, cuentas, ingresos, FIFO (fase 1); órdenes y liquidaciones (fase 3) | Fase 1 hecha |
 | `core-tax` | Fiscalidad y calendario fiscal | Fase 4 |
 | `data-market` | Proveedores de precios intercambiables, divisas, calendarios | Fase 2 |
-| `data-db` | Room, copias de seguridad | Fase 1 |
+| `data-db` | Room, copias de seguridad | Siguiente paso (tras la fase 1) |
 | `app` y `feature-*` | Interfaz | Fase 5 |
 
 ## Reglas aprobadas
