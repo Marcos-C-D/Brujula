@@ -14,6 +14,12 @@ class Ledger(val accountId: AccountId) {
     private val _records = ArrayList<LedgerRecord>()
     private var _state: AccountState = AccountState.EMPTY
 
+    /**
+     * Gancho de persistencia: se llama con el movimiento YA validado y ANTES de confirmarlo en memoria.
+     * Si lanza una excepción, el movimiento no se registra (memoria y disco no se desincronizan).
+     */
+    internal var journal: ((LedgerRecord) -> Unit)? = null
+
     val records: List<LedgerRecord> get() = synchronized(lock) { _records.toList() }
 
     val state: AccountState get() = synchronized(lock) { _state }
@@ -22,6 +28,7 @@ class Ledger(val accountId: AccountId) {
         val seq = _records.size + 1L
         val newState = _state.apply(seq, event) // si falla, no se modifica nada
         val record = LedgerRecord(seq, event)
+        journal?.invoke(record)
         _records += record
         _state = newState
         record

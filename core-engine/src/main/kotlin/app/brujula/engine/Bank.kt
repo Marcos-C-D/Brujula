@@ -4,6 +4,7 @@ import app.brujula.model.AccountId
 import app.brujula.model.Money
 import java.time.LocalDate
 import java.time.YearMonth
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -16,23 +17,35 @@ class Account internal constructor(
     val createdOn: LocalDate,
     val ledger: Ledger,
     incomeHistory: List<IncomeConfig>,
+    archiveIntervals: List<ArchiveInterval> = emptyList(),
 ) {
     var name: String = name
         internal set
     var incomeHistory: List<IncomeConfig> = incomeHistory
         internal set
-    var archiveIntervals: List<ArchiveInterval> = emptyList()
+    var archiveIntervals: List<ArchiveInterval> = archiveIntervals
         internal set
 
     val state: AccountState get() = ledger.state
     val isArchived: Boolean get() = archiveIntervals.lastOrNull()?.to == null && archiveIntervals.isNotEmpty()
+
+    val config: AccountConfig get() = AccountConfig(id, name, createdOn, incomeHistory, archiveIntervals)
 }
+
+/** Conflicto al importar: ya existe una cuenta con el mismo identificador o nombre. */
+class ImportConflictException(message: String) : BankException(message)
 
 /**
  * Conjunto de cuentas independientes. Ninguna operación de una cuenta afecta a otra: cada una tiene su
  * propio libro. No existen transferencias entre cuentas.
+ *
+ * Si se indica un [store], cada cambio se guarda ANTES de confirmarse en memoria: si el guardado falla,
+ * la operación falla y nada cambia.
  */
-class Bank(private val newId: () -> String = sequentialIds()) {
+class Bank(
+    private val newId: () -> String = randomIds(),
+    private val store: BankStore? = null,
+) {
     private val accounts = LinkedHashMap<AccountId, Account>()
 
     @Synchronized
@@ -43,6 +56,14 @@ class Bank(private val newId: () -> String = sequentialIds()) {
 
     @Synchronized
     fun get(id: AccountId): Account = accounts[id] ?: throw NoSuchAccountException(id.value)
+
+    /** Copia coherente de todas las cuentas (incluidas las archivadas) para copias de seguridad. */
+    @Synchronized
+    fun snapshot(): List<StoredAccount> =
+        accounts.values.map { StoredAccount(it.config, it.ledger.records.map { r -> r.event }) }
+
+    private fun journalFor(id: AccountId): ((LedgerRecord) -> Unit)? =
+        store?.let { s -> { record: LedgerRecord -> s.appendEvent(id, record) } }
 
     @Synchronized
     fun createAccount(
@@ -57,13 +78,38 @@ class Bank(private val newId: () -> String = sequentialIds()) {
         if (accounts.values.any { it.name.equals(cleanName, ignoreCase = true) }) {
             throw InvalidAccountException("Ya existe una cuenta llamada \"$cleanName\"")
         }
-        val config = IncomeConfig(YearMonth.from(today), monthlyIncome, incomeDay) // valida importe y día
+        val income = IncomeConfig(YearMonth.from(today), monthlyIncome, incomeDay) // valida importe y día
         val id = AccountId(newId())
         val ledger = Ledger(id)
-        ledger.post(OpeningBalance(today, openingBalance)) // valida saldo >= 0 y céntimos
-        val account = Account(id, cleanName, today, ledger, listOf(config))
+        val opening = ledger.post(OpeningBalance(today, openingBalance)) // valida saldo >= 0 y céntimos
+        val config = AccountConfig(id, cleanName, today, listOf(income), emptyList())
+        store?.createAccounts(listOf(config to listOf(opening))) // si falla, la cuenta no se registra
+        ledger.journal = journalFor(id)
+        val account = Account(id, cleanName, today, ledger, listOf(income))
         accounts[id] = account
         return account
+    }
+
+    /**
+     * Importa cuentas ya validadas (copia de seguridad). Todo o nada: si alguna choca por identificador o
+     * nombre con una existente, o entre sí, no se importa ninguna.
+     */
+    @Synchronized
+    fun importAccounts(items: List<StoredAccount>): List<Account> {
+        val ids = HashSet<AccountId>(accounts.keys)
+        val names = accounts.values.map { it.name.lowercase() }.toHashSet()
+        val prepared = items.map { stored ->
+            val c = stored.config
+            if (!ids.add(c.id)) throw ImportConflictException("Ya existe una cuenta con el identificador ${c.id}")
+            if (!names.add(c.name.lowercase())) throw ImportConflictException("Ya existe una cuenta llamada \"${c.name}\"")
+            val ledger = replayChecked(c.id, stored.events)
+            Triple(c, ledger, ledger.records)
+        }
+        store?.createAccounts(prepared.map { (c, _, r) -> c to r })
+        return prepared.map { (c, ledger, _) ->
+            ledger.journal = journalFor(c.id)
+            Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals).also { accounts[c.id] = it }
+        }
     }
 
     @Synchronized
@@ -74,6 +120,7 @@ class Bank(private val newId: () -> String = sequentialIds()) {
         if (accounts.values.any { it.id != id && it.name.equals(clean, ignoreCase = true) }) {
             throw InvalidAccountException("Ya existe una cuenta llamada \"$clean\"")
         }
+        store?.saveConfig(account.config.copy(name = clean))
         account.name = clean
     }
 
@@ -139,8 +186,9 @@ class Bank(private val newId: () -> String = sequentialIds()) {
             throw InvalidAccountException("No se pueden modificar periodos ya abonados (mínimo $minAllowed)")
         }
         val newConfig = IncomeConfig(from, amount, dayOfMonth)
-        account.incomeHistory = (account.incomeHistory.filter { it.fromPeriod != from } + newConfig)
-            .sortedBy { it.fromPeriod }
+        val newHistory = (account.incomeHistory.filter { it.fromPeriod != from } + newConfig).sortedBy { it.fromPeriod }
+        store?.saveConfig(account.config.copy(incomeHistory = newHistory))
+        account.incomeHistory = newHistory
     }
 
     /** Archivar: la cuenta deja de operar y de recibir ingresos, pero se conserva y se puede restaurar. */
@@ -149,7 +197,9 @@ class Bank(private val newId: () -> String = sequentialIds()) {
         val account = get(id)
         if (account.isArchived) return
         creditDueIncomes(account, today)
-        account.archiveIntervals = account.archiveIntervals + ArchiveInterval(today, null)
+        val intervals = account.archiveIntervals + ArchiveInterval(today, null)
+        store?.saveConfig(account.config.copy(archiveIntervals = intervals))
+        account.archiveIntervals = intervals
     }
 
     @Synchronized
@@ -157,7 +207,9 @@ class Bank(private val newId: () -> String = sequentialIds()) {
         val account = get(id)
         if (!account.isArchived) return
         val open = account.archiveIntervals.last()
-        account.archiveIntervals = account.archiveIntervals.dropLast(1) + open.copy(to = today)
+        val intervals = account.archiveIntervals.dropLast(1) + open.copy(to = today)
+        store?.saveConfig(account.config.copy(archiveIntervals = intervals))
+        account.archiveIntervals = intervals
     }
 
     /** Eliminación definitiva: solo para cuentas archivadas. */
@@ -165,13 +217,42 @@ class Bank(private val newId: () -> String = sequentialIds()) {
     fun deletePermanently(id: AccountId) {
         val account = get(id)
         if (!account.isArchived) throw InvalidAccountException("Solo se pueden eliminar definitivamente cuentas archivadas")
+        store?.deleteAccount(id)
         accounts.remove(id)
     }
 
     companion object {
+        /** Identificadores aleatorios (producción): nunca colisionan entre dispositivos ni tras restaurar. */
+        fun randomIds(): () -> String = { UUID.randomUUID().toString() }
+
+        /** Identificadores secuenciales, solo para pruebas deterministas. */
         fun sequentialIds(): () -> String {
             val counter = AtomicLong()
             return { "cuenta-${counter.incrementAndGet()}" }
+        }
+
+        /** Reconstruye el banco desde un almacén. Si algo no cuadra lanza [CorruptStoreException]: nunca descarta datos. */
+        fun restore(store: BankStore, newId: () -> String = randomIds()): Bank {
+            val bank = Bank(newId, store)
+            for (stored in store.loadAccounts()) {
+                val c = stored.config
+                val ledger = try {
+                    replayChecked(c.id, stored.events)
+                } catch (e: LedgerException) {
+                    throw CorruptStoreException(c.id, listOf(e.message ?: "movimientos no válidos"))
+                }
+                ledger.journal = bank.journalFor(c.id)
+                bank.accounts[c.id] = Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals)
+            }
+            return bank
+        }
+
+        /** Reproduce los eventos y comprueba la auditoría; lanza LedgerException si no cuadra. */
+        internal fun replayChecked(id: AccountId, events: List<LedgerEvent>): Ledger {
+            val ledger = Ledger.replay(id, events)
+            val problems = LedgerAuditor.audit(ledger.records)
+            if (problems.isNotEmpty()) throw InvalidEntryException("La auditoría no cuadra: ${problems.joinToString("; ")}")
+            return ledger
         }
     }
 }

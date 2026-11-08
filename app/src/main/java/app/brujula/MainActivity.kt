@@ -8,22 +8,76 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import app.brujula.model.Money
+import app.brujula.data.SqliteBankStore
+import app.brujula.engine.Bank
+import app.brujula.engine.LedgerAuditor
 
 class MainActivity : ComponentActivity() {
+
+    private val datos = mutableStateOf("Leyendo datos guardados…")
+    private val prueba = mutableStateOf("")
+    private val ejecutando = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { BrujulaTheme { PantallaInicial() } }
+        setContent {
+            BrujulaTheme {
+                PantallaInicial(
+                    datos = datos.value,
+                    prueba = prueba.value,
+                    ejecutando = ejecutando.value,
+                    alProbar = { lanzarPrueba() },
+                )
+            }
+        }
+        leerDatosGuardados()
+    }
+
+    /** Lee (solo lectura) la base de datos real y muestra un resumen verificado. */
+    private fun leerDatosGuardados() {
+        Thread {
+            datos.value = try {
+                val store = SqliteBankStore(applicationContext)
+                try {
+                    val cuentas = Bank.restore(store).all()
+                    val movimientos = cuentas.sumOf { it.ledger.records.size }
+                    val problemas = cuentas.flatMap { LedgerAuditor.audit(it.ledger.records) }
+                    "Cuentas guardadas: ${cuentas.size} · movimientos: $movimientos\n" +
+                        "Auditoría de datos: " + if (problemas.isEmpty()) "correcta" else "${problemas.size} problemas"
+                } finally {
+                    store.close()
+                }
+            } catch (e: Exception) {
+                "Error al leer los datos guardados: ${e.message}"
+            }
+        }.start()
+    }
+
+    private fun lanzarPrueba() {
+        if (ejecutando.value) return
+        ejecutando.value = true
+        prueba.value = "Ejecutando prueba…"
+        Thread {
+            val resultado = try {
+                PruebaPersistencia.ejecutar(applicationContext, "brujula-prueba.db")
+            } catch (e: Exception) {
+                "✘ La prueba falló: ${e.message}"
+            }
+            prueba.value = resultado
+            ejecutando.value = false
+        }.start()
     }
 }
 
@@ -40,10 +94,12 @@ private fun BrujulaTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun PantallaInicial() {
-    // Comprobación mínima de que el módulo core-model está enlazado en el APK.
-    val prueba = Money.of("0.10") + Money.of("0.20")
-
+private fun PantallaInicial(
+    datos: String,
+    prueba: String,
+    ejecutando: Boolean,
+    alProbar: () -> Unit,
+) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -53,18 +109,22 @@ private fun PantallaInicial() {
             Text("Brújula", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
             Text("Simulador de inversión", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Fase 1 · núcleo financiero (sin interfaz aún) (v${BuildConfigInfo.VERSION})",
+                "Fase 1 · núcleo y persistencia (v${BuildConfigInfo.VERSION})",
                 modifier = Modifier.padding(top = 16.dp),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Text(
-                "Comprobación de módulos: 0,10 + 0,20 = $prueba",
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodySmall,
-            )
+            Text(datos, modifier = Modifier.padding(top = 16.dp), style = MaterialTheme.typography.bodySmall)
+
+            Button(onClick = alProbar, enabled = !ejecutando, modifier = Modifier.padding(top = 24.dp)) {
+                Text("Probar persistencia (base temporal)")
+            }
+            if (prueba.isNotEmpty()) {
+                Text(prueba, modifier = Modifier.padding(top = 12.dp), style = MaterialTheme.typography.bodySmall)
+            }
+
             Text(
                 "Esto es una simulación educativa. No es asesoramiento financiero.",
-                modifier = Modifier.padding(top = 24.dp),
+                modifier = Modifier.padding(top = 32.dp),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -72,5 +132,5 @@ private fun PantallaInicial() {
 }
 
 private object BuildConfigInfo {
-    const val VERSION = "0.1.0"
+    const val VERSION = "0.2.0"
 }

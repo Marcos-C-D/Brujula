@@ -18,7 +18,7 @@
 | `core-engine` | Libro, cuentas, ingresos, FIFO (fase 1); órdenes y liquidaciones (fase 3) | Fase 1 hecha |
 | `core-tax` | Fiscalidad y calendario fiscal | Fase 4 |
 | `data-market` | Proveedores de precios intercambiables, divisas, calendarios | Fase 2 |
-| `data-db` | Room, copias de seguridad | Siguiente paso (tras la fase 1) |
+| `data-db` | Almacén SQLite nativo (en vez de Room: esquema simple de registro de eventos, menos dependencias) | Hecho (fase 1b) |
 | `app` y `feature-*` | Interfaz | Fase 5 |
 
 ## Reglas aprobadas

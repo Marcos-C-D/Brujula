@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.2.0 · Fase 1b · persistencia y copias de seguridad
+- `Bank` guarda cada cambio antes de confirmarlo (si el guardado falla, no cambia nada) y se recupera con `Bank.restore`.
+- Nuevo módulo `data-db`: `SqliteBankStore` (SQLite nativo, transaccional, importes como texto).
+- Copia de seguridad JSON completa (`BackupService`) con validación y auditoría al importar (todo o nada).
+- Exportación CSV por cuenta (formato Excel en español por defecto).
+- Identificadores de cuenta aleatorios (UUID).
+- La app muestra un resumen verificado de los datos guardados y una autoprueba de persistencia con base temporal.
+- 85 pruebas automáticas en el núcleo.
+
 ## 0.1.0 · Fase 1 · núcleo financiero
 - `core-model`: `Money` (ahora con igualdad que ignora la escala), `Units`, `AccountId`, `AssetId`.
 - Nuevo módulo `core-engine`: libro de movimientos inmutable, lotes con FIFO exacto, estado derivado de

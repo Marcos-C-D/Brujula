@@ -41,3 +41,16 @@ cuentas. Archivar conserva y bloquea; eliminar definitivamente solo se permite s
 ## Patrimonio
 `netWorth = efectivo + valor de las inversiones` usando precios reales. Si falta el precio de un activo en cartera
 se lanza `MissingPriceException`: nunca se inventa un precio.
+
+## Persistencia y copias (fase 1b)
+- `BankStore` es la interfaz de almacenamiento; `SqliteBankStore` (módulo `data-db`) la implementa con SQLite.
+  Tablas: `account` (configuración en JSON) y `ledger_event` (un JSON por movimiento, con secuencia).
+- `Bank` persiste **antes** de confirmar en memoria: si el disco falla, la operación falla y nada cambia.
+- `Bank.restore(store)` reproduce y audita cada cuenta; si algo no cuadra lanza `CorruptStoreException`
+  (nunca se descartan datos en silencio).
+- Copia de seguridad JSON (`BackupService`): incluye cuentas archivadas, configuración, histórico de ingresos y
+  movimientos. Al importar se valida y audita todo; si algo falla, no se importa nada. Los conflictos de
+  identificador o nombre se rechazan sin cambios parciales.
+- CSV (`CsvExporter`): un movimiento por fila con saldo de efectivo acumulado; `;` y coma decimal por defecto;
+  los textos que empiezan por `= + - @` se neutralizan para evitar fórmulas en hojas de cálculo.
+- Limitación: la interfaz para exportar/importar archivos llega en la fase 5 (selector de archivos).
