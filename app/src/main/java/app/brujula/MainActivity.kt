@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -29,6 +31,8 @@ class MainActivity : ComponentActivity() {
     private val datos = mutableStateOf("Leyendo datos guardados…")
     private val prueba = mutableStateOf("")
     private val ejecutando = mutableStateOf(false)
+    private val mercado = mutableStateOf("")
+    private val actualizando = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,11 +42,16 @@ class MainActivity : ComponentActivity() {
                     datos = datos.value,
                     prueba = prueba.value,
                     ejecutando = ejecutando.value,
+                    mercado = mercado.value,
+                    actualizando = actualizando.value,
                     alProbar = { lanzarPrueba() },
+                    alActualizar = { actualizarPrecios() },
                 )
             }
         }
         leerDatosGuardados()
+        UpdateScheduler.scheduleNext(applicationContext) // próxima actualización a las 00:00 (Madrid)
+        recuperarActualizacionPerdida()
     }
 
     /** Lee (solo lectura) la base de datos real y muestra un resumen verificado. */
@@ -79,6 +88,31 @@ class MainActivity : ComponentActivity() {
             ejecutando.value = false
         }.start()
     }
+
+    /** Botón manual: solo actualiza datos de mercado; no toca cuentas ni órdenes. */
+    private fun actualizarPrecios() {
+        if (actualizando.value) return
+        actualizando.value = true
+        mercado.value = "Actualizando precios… (puede tardar un minuto)"
+        Thread {
+            mercado.value = try {
+                MarketModule.updateAndReport(applicationContext).joinToString("\n")
+            } catch (e: Exception) {
+                "✘ La actualización falló: ${e.message}"
+            }
+            actualizando.value = false
+        }.start()
+    }
+
+    private fun recuperarActualizacionPerdida() {
+        Thread {
+            try {
+                MarketModule.catchUpIfNeeded(applicationContext)
+            } catch (e: Exception) {
+                // sin conexión u otro fallo: se conserva lo guardado
+            }
+        }.start()
+    }
 }
 
 private val Esmeralda = Color(0xFF2FBF8F)
@@ -98,18 +132,21 @@ private fun PantallaInicial(
     datos: String,
     prueba: String,
     ejecutando: Boolean,
+    mercado: String,
+    actualizando: Boolean,
     alProbar: () -> Unit,
+    alActualizar: () -> Unit,
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("Brújula", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
             Text("Simulador de inversión", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Fase 1 · núcleo y persistencia (v${BuildConfigInfo.VERSION})",
+                "Fase 2 · datos de mercado (v${BuildConfigInfo.VERSION})",
                 modifier = Modifier.padding(top = 16.dp),
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -122,6 +159,13 @@ private fun PantallaInicial(
                 Text(prueba, modifier = Modifier.padding(top = 12.dp), style = MaterialTheme.typography.bodySmall)
             }
 
+            Button(onClick = alActualizar, enabled = !actualizando, modifier = Modifier.padding(top = 24.dp)) {
+                Text("Actualizar precios ahora (diagnóstico)")
+            }
+            if (mercado.isNotEmpty()) {
+                Text(mercado, modifier = Modifier.padding(top = 12.dp), style = MaterialTheme.typography.bodySmall)
+            }
+
             Text(
                 "Esto es una simulación educativa. No es asesoramiento financiero.",
                 modifier = Modifier.padding(top = 32.dp),
@@ -132,5 +176,5 @@ private fun PantallaInicial(
 }
 
 private object BuildConfigInfo {
-    const val VERSION = "0.2.0"
+    const val VERSION = "0.3.0"
 }

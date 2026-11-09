@@ -17,7 +17,7 @@
 | `core-model` | Tipos puros: dinero, unidades, identificadores | Hecho (fase 1) |
 | `core-engine` | Libro, cuentas, ingresos, FIFO (fase 1); órdenes y liquidaciones (fase 3) | Fase 1 hecha |
 | `core-tax` | Fiscalidad y calendario fiscal | Fase 4 |
-| `data-market` | Proveedores de precios intercambiables, divisas, calendarios | Fase 2 |
+| `core-market` | Series, rentabilidades, riesgo, calendarios, divisas, proveedores y actualizador | Hecho (fase 2) |
 | `data-db` | Almacén SQLite nativo (en vez de Room: esquema simple de registro de eventos, menos dependencias) | Hecho (fase 1b) |
 | `app` y `feature-*` | Interfaz | Fase 5 |
 

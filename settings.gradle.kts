@@ -19,4 +19,5 @@ rootProject.name = "Brujula"
 include(":app")
 include(":core-model")
 include(":core-engine")
+include(":core-market")
 include(":data-db")

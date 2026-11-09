@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.3.0 · Fase 2 · datos de mercado
+- Nuevo módulo `core-market`: series de precios, rentabilidades (YTD, 3m, 6m, 1a, 2a, 5a, 10a, desde el inicio) con
+  «Sin datos suficientes» cuando no hay histórico, volatilidad anualizada y clase de riesgo 1-7, calendarios de mercado
+  (NYSE, Xetra, Euronext, Londres), conversión a EUR con tipos del BCE, y comprobación de antigüedad de precios.
+- Proveedores intercambiables: Yahoo Finance (no oficial), CoinGecko y BCE, con símbolos alternativos y respaldo.
+  Nunca se inventan datos: si falla todo se conserva el último precio válido y se anota el error.
+- Actualización diaria a las 00:00 (Europe/Madrid, con cambio de horario) con WorkManager y recuperación al abrir la app.
+- Catálogo de 17 activos sin marcas comerciales; los símbolos de proxy están sin verificar (ver diagnóstico).
+- La app incluye un botón de diagnóstico que actualiza y muestra el resultado por activo.
+- 119 pruebas automáticas en total.
+
 ## 0.2.0 · Fase 1b · persistencia y copias de seguridad
 - `Bank` guarda cada cambio antes de confirmarlo (si el guardado falla, no cambia nada) y se recupera con `Bank.restore`.
 - Nuevo módulo `data-db`: `SqliteBankStore` (SQLite nativo, transaccional, importes como texto).

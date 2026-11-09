@@ -23,4 +23,5 @@ android {
 
 dependencies {
     api(project(":core-engine"))
+    api(project(":core-market"))
 }
