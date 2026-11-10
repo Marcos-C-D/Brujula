@@ -18,7 +18,11 @@ data class Lot(
     val unitsRemaining: Units,
     val costOriginal: Money,
     val costRemaining: Money,
-)
+    /** Hasta esta fecha las participaciones están bloqueadas (liquidación de fondos); null = disponibles. */
+    val settlesOn: LocalDate? = null,
+) {
+    fun isSettled(asOf: LocalDate): Boolean = settlesOn == null || !settlesOn.isAfter(asOf)
+}
 
 /** Parte de un lote consumida por una venta. */
 data class LotConsumption(
@@ -51,12 +55,12 @@ data class FifoResult(val consumptions: List<LotConsumption>, val remainingLots:
  * suma de los costes consumidos de un lote es exactamente su coste original.
  */
 object Fifo {
-    fun consume(lots: List<Lot>, toSell: Units): FifoResult {
+    fun consume(lots: List<Lot>, toSell: Units, eligible: (Lot) -> Boolean = { true }): FifoResult {
         var pending = toSell.value
         val consumptions = ArrayList<LotConsumption>()
         val remaining = ArrayList<Lot>()
         for (lot in lots) {
-            if (pending.signum() == 0) {
+            if (pending.signum() == 0 || !eligible(lot)) {
                 remaining += lot
                 continue
             }

@@ -87,6 +87,11 @@ object CsvExporter {
                 is Purchase -> { balance -= e.totalCost; listOf("COMPRA", text(e.assetId.value), e.units.toString(), cash(-e.totalCost), cash(e.fees), cash(balance), text(e.note)) }
                 is Sale -> { balance += e.netProceeds; listOf("VENTA", text(e.assetId.value), e.units.toString(), cash(e.netProceeds), cash(e.fees), cash(balance), text(e.note)) }
                 is CashAdjustment -> { balance += e.amount; listOf("AJUSTE", "", "", cash(e.amount), "", cash(balance), text(e.note)) }
+                is OrderPlaced -> listOf("ORDEN", text(e.spec.assetId.value), e.spec.units?.toString() ?: "", "", "", cash(balance), text("${e.orderId} ${e.spec.side}/${e.spec.type}"))
+                is OrderRejected -> listOf("ORDEN_RECHAZADA", text(e.spec.assetId.value), e.spec.units?.toString() ?: "", "", "", cash(balance), text("${e.orderId}: ${e.reason}"))
+                is OrderClosed -> listOf("ORDEN_CERRADA", "", "", "", "", cash(balance), text("${e.orderId} ${e.status}: ${e.reason}"))
+                is OrderSettled -> listOf("LIQUIDACION", "", "", "", "", cash(balance), text(e.orderId))
+                is FundTransfer -> listOf("TRASPASO", text("${e.fromAsset.value}>${e.toAsset.value}"), e.unitsOut.toString(), "", "", cash(balance), text("${e.orderId} entran ${e.unitsIn}"))
             }
             val fields = listOf(r.seq.toString(), e.date.toString()) + row
             // columnas numéricas: unidades, importe_efectivo, comisiones, saldo_efectivo (posiciones 4 a 7)

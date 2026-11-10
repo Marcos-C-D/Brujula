@@ -55,6 +55,12 @@ data class Purchase(
     val units: Units,
     val fees: Money = Money.ZERO,
     override val note: String = "",
+    val orderId: String? = null,
+    val price: Money? = null,
+    /** Fecha de liquidación de la operación (si procede). */
+    val settlementDate: LocalDate? = null,
+    /** true: las participaciones quedan bloqueadas (no se pueden vender) hasta [settlementDate]. */
+    val lockUnits: Boolean = false,
 ) : LedgerEvent {
     init {
         if (!invested.isPositive) throw InvalidEntryException("El importe invertido debe ser positivo")
@@ -77,6 +83,10 @@ data class Sale(
     val grossProceeds: Money,
     val fees: Money = Money.ZERO,
     override val note: String = "",
+    val orderId: String? = null,
+    val price: Money? = null,
+    /** Fecha en que el importe neto pasa a estar disponible. */
+    val settlementDate: LocalDate? = null,
 ) : LedgerEvent {
     init {
         if (!units.isPositive) throw InvalidEntryException("Las unidades vendidas deben ser positivas")
@@ -103,5 +113,69 @@ data class CashAdjustment(
         if (amount.isZero) throw InvalidEntryException("Un ajuste de efectivo no puede ser cero")
         if (reason.isBlank()) throw InvalidEntryException("Un ajuste de efectivo necesita un motivo")
         amount.requireCents("El ajuste de efectivo")
+    }
+}
+
+/** Orden aceptada: queda pendiente y reserva efectivo (compra) o unidades (venta / traspaso). */
+data class OrderPlaced(
+    override val date: LocalDate,
+    val orderId: String,
+    val spec: OrderSpec,
+    override val note: String = "",
+) : LedgerEvent {
+    init { if (orderId.isBlank()) throw InvalidEntryException("La orden necesita un identificador") }
+}
+
+/** Orden rechazada al crearla (por ejemplo, una compra programada sin efectivo): queda constancia sin reservar nada. */
+data class OrderRejected(
+    override val date: LocalDate,
+    val orderId: String,
+    val spec: OrderSpec,
+    val reason: String,
+    override val note: String = reason,
+) : LedgerEvent {
+    init { if (orderId.isBlank()) throw InvalidEntryException("La orden necesita un identificador") }
+}
+
+/** Cierre de una orden pendiente sin ejecutarse: cancelada, caducada o rechazada al ejecutarse. Libera la reserva. */
+data class OrderClosed(
+    override val date: LocalDate,
+    val orderId: String,
+    val status: OrderStatus,
+    val reason: String,
+    override val note: String = reason,
+) : LedgerEvent {
+    init {
+        if (status != OrderStatus.CANCELLED && status != OrderStatus.EXPIRED && status != OrderStatus.REJECTED) {
+            throw InvalidEntryException("Estado de cierre no válido: $status")
+        }
+    }
+}
+
+/** Operación liquidada: el efectivo está disponible o las participaciones entregadas. */
+data class OrderSettled(
+    override val date: LocalDate,
+    val orderId: String,
+    override val note: String = "Operación liquidada",
+) : LedgerEvent
+
+/**
+ * Traspaso entre fondos con diferimiento fiscal: salen [unitsOut] del origen y entran [unitsIn] en el destino
+ * (calculadas por la valoración de ambos fondos). El coste y la fecha de adquisición de cada lote se conservan;
+ * no hay ganancia ni movimiento de efectivo. Las participaciones del destino quedan bloqueadas hasta [settlementDate].
+ */
+data class FundTransfer(
+    override val date: LocalDate,
+    val fromAsset: AssetId,
+    val toAsset: AssetId,
+    val unitsOut: Units,
+    val unitsIn: Units,
+    val orderId: String,
+    val settlementDate: LocalDate,
+    override val note: String = "",
+) : LedgerEvent {
+    init {
+        if (fromAsset == toAsset) throw InvalidEntryException("Origen y destino del traspaso deben ser distintos")
+        if (!unitsOut.isPositive || !unitsIn.isPositive) throw InvalidEntryException("Las unidades del traspaso deben ser positivas")
     }
 }

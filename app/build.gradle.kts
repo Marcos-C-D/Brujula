@@ -16,8 +16,8 @@ android {
         applicationId = "app.brujula"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.3.0"
+        versionCode = 7
+        versionName = "0.4.0"
     }
 
     signingConfigs {
@@ -60,6 +60,7 @@ dependencies {
     implementation(project(":core-model"))
     implementation(project(":core-engine"))
     implementation(project(":core-market"))
+    implementation(project(":core-trading"))
     implementation(project(":data-db"))
     implementation("androidx.work:work-runtime-ktx:2.9.1")
 

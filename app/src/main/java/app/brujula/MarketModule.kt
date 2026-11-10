@@ -48,7 +48,14 @@ object MarketModule {
         val store = SqliteMarketStore(context)
         try {
             val outcomes = newUpdater(store).updateAll(AssetCatalog.DEFAULT)
-            return outcomes.map { describe(it, store) }
+            val lines = outcomes.map { describe(it, store) }.toMutableList()
+            lines += try {
+                val trading = TradingModule.processAll(context)
+                "Órdenes: " + if (trading.isEmpty()) "nada que procesar" else "${trading.size} novedades\n    " + trading.joinToString("\n    ")
+            } catch (e: Exception) {
+                "Órdenes: no se pudieron procesar (${e.message})"
+            }
+            return lines
         } finally {
             store.close()
         }
@@ -60,6 +67,7 @@ object MarketModule {
         try {
             if (UpdateSchedule.needsCatchUp(store.lastSuccessfulUpdate(), Instant.now())) {
                 newUpdater(store).updateAll(AssetCatalog.DEFAULT)
+                try { TradingModule.processAll(context) } catch (e: Exception) { /* se reintentará en la próxima ejecución */ }
             }
         } finally {
             store.close()
@@ -121,6 +129,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : Worker(context,
         val store = SqliteMarketStore(applicationContext)
         try {
             MarketModule.newUpdater(store).updateAll(AssetCatalog.DEFAULT)
+            TradingModule.processAll(applicationContext)
         } catch (e: Exception) {
             // Un fallo no debe romper la cadena diaria: se conserva lo guardado y se reintenta mañana.
         } finally {

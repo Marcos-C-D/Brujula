@@ -6,6 +6,7 @@ import app.brujula.model.AssetId
 import app.brujula.model.Money
 import app.brujula.model.Units
 import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -17,16 +18,74 @@ object EventCodec {
     fun toMap(e: LedgerEvent): Map<String, Any?> = when (e) {
         is OpeningBalance -> linkedMapOf("type" to "OPENING", "date" to e.date.toString(), "amount" to e.amount.toString(), "note" to e.note)
         is MonthlyIncome -> linkedMapOf("type" to "INCOME", "date" to e.date.toString(), "period" to e.period.toString(), "amount" to e.amount.toString(), "note" to e.note)
-        is Purchase -> linkedMapOf(
+        is Purchase -> linkedMapOf<String, Any?>(
             "type" to "PURCHASE", "date" to e.date.toString(), "asset" to e.assetId.value,
             "invested" to e.invested.toString(), "units" to e.units.toString(), "fees" to e.fees.toString(), "note" to e.note,
-        )
-        is Sale -> linkedMapOf(
+        ).also { m ->
+            e.orderId?.let { m["orderId"] = it }
+            e.price?.let { m["price"] = it.toString() }
+            e.settlementDate?.let { m["settlementDate"] = it.toString() }
+            if (e.lockUnits) m["lockUnits"] = true
+        }
+        is Sale -> linkedMapOf<String, Any?>(
             "type" to "SALE", "date" to e.date.toString(), "asset" to e.assetId.value,
             "units" to e.units.toString(), "gross" to e.grossProceeds.toString(), "fees" to e.fees.toString(), "note" to e.note,
-        )
+        ).also { m ->
+            e.orderId?.let { m["orderId"] = it }
+            e.price?.let { m["price"] = it.toString() }
+            e.settlementDate?.let { m["settlementDate"] = it.toString() }
+        }
         is CashAdjustment -> linkedMapOf("type" to "ADJUSTMENT", "date" to e.date.toString(), "amount" to e.amount.toString(), "reason" to e.reason, "note" to e.note)
+        is OrderPlaced -> linkedMapOf("type" to "ORDER_PLACED", "date" to e.date.toString(), "orderId" to e.orderId, "spec" to specMap(e.spec), "note" to e.note)
+        is OrderRejected -> linkedMapOf("type" to "ORDER_REJECTED", "date" to e.date.toString(), "orderId" to e.orderId, "spec" to specMap(e.spec), "reason" to e.reason, "note" to e.note)
+        is OrderClosed -> linkedMapOf("type" to "ORDER_CLOSED", "date" to e.date.toString(), "orderId" to e.orderId, "status" to e.status.name, "reason" to e.reason, "note" to e.note)
+        is OrderSettled -> linkedMapOf("type" to "ORDER_SETTLED", "date" to e.date.toString(), "orderId" to e.orderId, "note" to e.note)
+        is FundTransfer -> linkedMapOf(
+            "type" to "TRANSFER", "date" to e.date.toString(), "from" to e.fromAsset.value, "to" to e.toAsset.value,
+            "unitsOut" to e.unitsOut.toString(), "unitsIn" to e.unitsIn.toString(), "orderId" to e.orderId,
+            "settlementDate" to e.settlementDate.toString(), "note" to e.note,
+        )
     }
+
+    fun specMap(sp: OrderSpec): Map<String, Any?> {
+        val m = linkedMapOf<String, Any?>("side" to sp.side.name, "type" to sp.type.name, "asset" to sp.assetId.value, "fees" to sp.fees.toString())
+        sp.toAssetId?.let { m["toAsset"] = it.value }
+        sp.amount?.let { m["amount"] = it.toString() }
+        sp.units?.let { m["units"] = it.toString() }
+        sp.limitPrice?.let { m["limitPrice"] = it.toString() }
+        sp.expiresOn?.let { m["expiresOn"] = it.toString() }
+        sp.placedAt?.let { m["placedAt"] = it.toString() }
+        sp.scheduleId?.let { m["scheduleId"] = it }
+        sp.periodKey?.let { m["periodKey"] = it }
+        return m
+    }
+
+    fun specFrom(any: Any?): OrderSpec {
+        val m = asMap(any, "orden")
+        return OrderSpec(
+            side = enumOf<OrderSide>(text(m, "side")),
+            type = enumOf<OrderType>(text(m, "type")),
+            assetId = AssetId(text(m, "asset")),
+            toAssetId = optText(m, "toAsset")?.let { AssetId(it) },
+            amount = optText(m, "amount")?.let { moneyOf(it, "amount") },
+            units = optText(m, "units")?.let { unitsOf(it, "units") },
+            limitPrice = optText(m, "limitPrice")?.let { moneyOf(it, "limitPrice") },
+            expiresOn = optText(m, "expiresOn")?.let { parseDate(it) },
+            fees = optText(m, "fees")?.let { moneyOf(it, "fees") } ?: Money.ZERO,
+            placedAt = optText(m, "placedAt")?.let { runCatching { Instant.parse(it) }.getOrNull() ?: throw CodecException("Instante no válido: $it") },
+            scheduleId = optText(m, "scheduleId"),
+            periodKey = optText(m, "periodKey"),
+        )
+    }
+
+    private inline fun <reified E : Enum<E>> enumOf(name: String): E =
+        enumValues<E>().firstOrNull { it.name == name } ?: throw CodecException("Valor no válido: $name")
+
+    private fun moneyOf(t: String, key: String): Money =
+        try { Money.of(t) } catch (e: NumberFormatException) { throw CodecException("Importe no válido en '$key': $t") }
+
+    private fun unitsOf(t: String, key: String): Units =
+        try { Units.of(t) } catch (e: NumberFormatException) { throw CodecException("Cantidad no válida en '$key': $t") }
 
     fun toJson(e: LedgerEvent): String = Json.write(toMap(e))
 
@@ -38,8 +97,30 @@ object EventCodec {
             return when (val type = text(m, "type")) {
                 "OPENING" -> OpeningBalance(date(m, "date"), money(m, "amount"), optText(m, "note") ?: "Saldo inicial")
                 "INCOME" -> MonthlyIncome(date(m, "date"), period(m, "period"), money(m, "amount"), optText(m, "note") ?: "Ingreso mensual")
-                "PURCHASE" -> Purchase(date(m, "date"), AssetId(text(m, "asset")), money(m, "invested"), units(m, "units"), money(m, "fees"), optText(m, "note") ?: "")
-                "SALE" -> Sale(date(m, "date"), AssetId(text(m, "asset")), units(m, "units"), money(m, "gross"), money(m, "fees"), optText(m, "note") ?: "")
+                "PURCHASE" -> Purchase(
+                    date(m, "date"), AssetId(text(m, "asset")), money(m, "invested"), units(m, "units"), money(m, "fees"), optText(m, "note") ?: "",
+                    orderId = optText(m, "orderId"), price = optText(m, "price")?.let { moneyOf(it, "price") },
+                    settlementDate = optText(m, "settlementDate")?.let { parseDate(it) }, lockUnits = m["lockUnits"] == true,
+                )
+                "SALE" -> Sale(
+                    date(m, "date"), AssetId(text(m, "asset")), units(m, "units"), money(m, "gross"), money(m, "fees"), optText(m, "note") ?: "",
+                    orderId = optText(m, "orderId"), price = optText(m, "price")?.let { moneyOf(it, "price") },
+                    settlementDate = optText(m, "settlementDate")?.let { parseDate(it) },
+                )
+                "ORDER_PLACED" -> OrderPlaced(date(m, "date"), text(m, "orderId"), specFrom(m["spec"]), optText(m, "note") ?: "")
+                "ORDER_REJECTED" -> {
+                    val reason = text(m, "reason")
+                    OrderRejected(date(m, "date"), text(m, "orderId"), specFrom(m["spec"]), reason, optText(m, "note") ?: reason)
+                }
+                "ORDER_CLOSED" -> {
+                    val reason = text(m, "reason")
+                    OrderClosed(date(m, "date"), text(m, "orderId"), enumOf<OrderStatus>(text(m, "status")), reason, optText(m, "note") ?: reason)
+                }
+                "ORDER_SETTLED" -> OrderSettled(date(m, "date"), text(m, "orderId"), optText(m, "note") ?: "Operación liquidada")
+                "TRANSFER" -> FundTransfer(
+                    date(m, "date"), AssetId(text(m, "from")), AssetId(text(m, "to")), units(m, "unitsOut"), units(m, "unitsIn"),
+                    text(m, "orderId"), parseDate(text(m, "settlementDate")), optText(m, "note") ?: "",
+                )
                 "ADJUSTMENT" -> {
                     val reason = text(m, "reason")
                     CashAdjustment(date(m, "date"), money(m, "amount"), reason, optText(m, "note") ?: reason)
@@ -67,6 +148,14 @@ object EventCodec {
         "archiveIntervals" to c.archiveIntervals.map {
             linkedMapOf("from" to it.from.toString(), "to" to it.to?.toString())
         },
+        "schedules" to c.schedules.map { p ->
+            linkedMapOf<String, Any?>(
+                "id" to p.id, "side" to p.side.name, "asset" to p.assetId.value,
+                "amount" to p.amount?.toString(), "units" to p.units?.toString(),
+                "frequency" to p.frequency.name, "dayOfWeek" to p.dayOfWeek, "dayOfMonth" to p.dayOfMonth,
+                "startDate" to p.startDate.toString(), "endDate" to p.endDate?.toString(), "paused" to p.paused,
+            )
+        },
     )
 
     fun configToJson(c: AccountConfig): String = Json.write(toMap(c))
@@ -84,8 +173,17 @@ object EventCodec {
                 val a = asMap(it, "archivado")
                 ArchiveInterval(date(a, "from"), optText(a, "to")?.let { t -> parseDate(t) })
             }
+            val schedules = ((m["schedules"] as? List<*>) ?: emptyList<Any?>()).map {
+                val p = asMap(it, "plan")
+                ScheduledPlan(
+                    id = text(p, "id"), side = enumOf<OrderSide>(text(p, "side")), assetId = AssetId(text(p, "asset")),
+                    amount = optText(p, "amount")?.let { a -> moneyOf(a, "amount") }, units = optText(p, "units")?.let { u -> unitsOf(u, "units") },
+                    frequency = enumOf<Frequency>(text(p, "frequency")), dayOfWeek = int(p, "dayOfWeek"), dayOfMonth = int(p, "dayOfMonth"),
+                    startDate = date(p, "startDate"), endDate = optText(p, "endDate")?.let { d -> parseDate(d) }, paused = p["paused"] == true,
+                )
+            }
             if (history.isEmpty()) throw CodecException("La cuenta no tiene configuración de ingresos")
-            return AccountConfig(AccountId(text(m, "id")), text(m, "name"), date(m, "createdOn"), history, intervals)
+            return AccountConfig(AccountId(text(m, "id")), text(m, "name"), date(m, "createdOn"), history, intervals, schedules)
         } catch (e: CodecException) {
             throw e
         } catch (e: BankException) {

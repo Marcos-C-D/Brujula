@@ -18,6 +18,7 @@ class Account internal constructor(
     val ledger: Ledger,
     incomeHistory: List<IncomeConfig>,
     archiveIntervals: List<ArchiveInterval> = emptyList(),
+    schedules: List<ScheduledPlan> = emptyList(),
 ) {
     var name: String = name
         internal set
@@ -26,10 +27,13 @@ class Account internal constructor(
     var archiveIntervals: List<ArchiveInterval> = archiveIntervals
         internal set
 
+    var schedules: List<ScheduledPlan> = schedules
+        internal set
+
     val state: AccountState get() = ledger.state
     val isArchived: Boolean get() = archiveIntervals.lastOrNull()?.to == null && archiveIntervals.isNotEmpty()
 
-    val config: AccountConfig get() = AccountConfig(id, name, createdOn, incomeHistory, archiveIntervals)
+    val config: AccountConfig get() = AccountConfig(id, name, createdOn, incomeHistory, archiveIntervals, schedules)
 }
 
 /** Conflicto al importar: ya existe una cuenta con el mismo identificador o nombre. */
@@ -108,7 +112,7 @@ class Bank(
         store?.createAccounts(prepared.map { (c, _, r) -> c to r })
         return prepared.map { (c, ledger, _) ->
             ledger.journal = journalFor(c.id)
-            Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals).also { accounts[c.id] = it }
+            Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals, c.schedules).also { accounts[c.id] = it }
         }
     }
 
@@ -139,6 +143,23 @@ class Bank(
         accounts.values.filter { !it.isArchived }.flatMap { account ->
             creditDueIncomes(account, today).map { account.id to it }
         }
+
+    /** Abona los ingresos pendientes de UNA cuenta activa hasta [today]. */
+    @Synchronized
+    fun creditDueIncomes(id: AccountId, today: LocalDate): List<LedgerRecord> {
+        val account = get(id)
+        return if (account.isArchived) emptyList() else creditDueIncomes(account, today)
+    }
+
+    /** Sustituye los planes periódicos de la cuenta (se guardan antes de aplicarse). */
+    @Synchronized
+    fun setSchedules(id: AccountId, plans: List<ScheduledPlan>) {
+        val account = get(id)
+        if (account.isArchived) throw AccountArchivedException(id.value)
+        if (plans.map { it.id }.toSet().size != plans.size) throw InvalidAccountException("Hay planes con el mismo identificador")
+        store?.saveConfig(account.config.copy(schedules = plans))
+        account.schedules = plans
+    }
 
     private fun creditDueIncomes(account: Account, today: LocalDate): List<LedgerRecord> {
         val state = account.ledger.state
@@ -242,7 +263,7 @@ class Bank(
                     throw CorruptStoreException(c.id, listOf(e.message ?: "movimientos no válidos"))
                 }
                 ledger.journal = bank.journalFor(c.id)
-                bank.accounts[c.id] = Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals)
+                bank.accounts[c.id] = Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals, c.schedules)
             }
             return bank
         }

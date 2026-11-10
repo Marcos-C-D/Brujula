@@ -10,6 +10,7 @@ data class AccountConfig(
     val createdOn: LocalDate,
     val incomeHistory: List<IncomeConfig>,
     val archiveIntervals: List<ArchiveInterval>,
+    val schedules: List<ScheduledPlan> = emptyList(),
 )
 
 /** Cuenta tal y como se guarda: configuración + todos sus movimientos, en orden. */

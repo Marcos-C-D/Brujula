@@ -1,5 +1,18 @@
 # Cambios
 
+## 0.4.0 · Fase 3 · órdenes, liquidaciones y traspasos
+- Las órdenes son eventos del libro: solicitada → aceptada → ejecutada → liquidada (o cancelada, caducada, rechazada), con
+  cronología consultable por orden. Las reservas de efectivo (compras) y de unidades (ventas, traspasos) se derivan de las
+  órdenes pendientes y evitan gastar dos veces el mismo dinero.
+- Órdenes a mercado, limitadas, stop-loss (venta), con caducidad configurable; compras y ventas periódicas (semanal/mensual).
+- Fondos: ejecución al valor liquidativo según la hora de corte, participaciones bloqueadas hasta liquidar, traspasos con
+  diferimiento fiscal (conservan coste y fecha de adquisición, sin ganancia ni efectivo). Los ETF y Bitcoin no se traspasan.
+- Liquidaciones con calendarios y vigencia (EE. UU. T+1; Europa T+2 hasta el 10-10-2027 y T+1 desde el 11-10-2027;
+  fondos 2/3/4 días hábiles configurables; Bitcoin inmediata). El efectivo vendido no está disponible hasta liquidar.
+- Comisiones configurables (0 por defecto). Procesado día a día e idempotente; si falta un dato de mercado, las órdenes esperan.
+- Nuevo módulo `core-trading`. 139 pruebas automáticas en total.
+- La actualización diaria de las 00:00 ahora también procesa las órdenes. Aún no hay interfaz para crearlas (fase 5).
+
 ## 0.3.0 · Fase 2 · datos de mercado
 - Nuevo módulo `core-market`: series de precios, rentabilidades (YTD, 3m, 6m, 1a, 2a, 5a, 10a, desde el inicio) con
   «Sin datos suficientes» cuando no hay histórico, volatilidad anualizada y clase de riesgo 1-7, calendarios de mercado

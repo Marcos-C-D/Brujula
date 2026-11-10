@@ -47,6 +47,30 @@ object LedgerAuditor {
                     sold.merge(e.assetId, e.units) { a, b -> a + b }
                 }
                 is CashAdjustment -> { cash += e.amount; adjustments += e.amount }
+                is FundTransfer, is OrderPlaced, is OrderRejected, is OrderClosed, is OrderSettled -> Unit
+            }
+        }
+
+        // Los traspasos mueven unidades y coste entre fondos sin ganancia ni efectivo.
+        val transferredCostOut = HashMap<AssetId, Money>()
+        for (t in state.transfers) {
+            sold.merge(t.from, t.unitsOut) { a, b -> a + b }
+            bought.merge(t.to, t.unitsIn) { a, b -> a + b }
+            purchaseCost.merge(t.to, t.cost) { a, b -> a + b }
+            transferredCostOut.merge(t.from, t.cost) { a, b -> a + b }
+        }
+
+        // Cada orden ejecutada debe apuntar a un movimiento real de su misma orden.
+        for (o in state.orders.values) {
+            if (o.status == OrderStatus.EXECUTED || o.status == OrderStatus.SETTLED) {
+                val rec = records.firstOrNull { it.seq == o.executionSeq }
+                val id = when (val ev = rec?.event) {
+                    is Purchase -> ev.orderId
+                    is Sale -> ev.orderId
+                    is FundTransfer -> ev.orderId
+                    else -> null
+                }
+                if (id != o.orderId) problems += "La orden ${o.orderId} no apunta a un movimiento de ejecución válido"
             }
         }
 
@@ -61,7 +85,7 @@ object LedgerAuditor {
 
             val remainingCost = state.position(asset)?.costBasis ?: Money.ZERO
             val consumedCost = state.realizedSales.filter { it.assetId == asset }
-                .fold(Money.ZERO) { acc, s -> acc + s.cost }
+                .fold(Money.ZERO) { acc, s -> acc + s.cost } + (transferredCostOut[asset] ?: Money.ZERO)
             if (purchaseCost.getValue(asset) != remainingCost + consumedCost) {
                 problems += "Coste de $asset: comprado ${purchaseCost.getValue(asset)} ≠ en cartera $remainingCost + consumido $consumedCost"
             }

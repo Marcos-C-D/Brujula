@@ -7,6 +7,7 @@ app/src/main/AndroidManifest.xml
 app/src/main/java/app/brujula/MainActivity.kt
 app/src/main/java/app/brujula/MarketModule.kt
 app/src/main/java/app/brujula/PruebaPersistencia.kt
+app/src/main/java/app/brujula/TradingModule.kt
 app/src/main/res/drawable/ic_launcher_foreground.xml
 app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 app/src/main/res/values/colors.xml
@@ -25,6 +26,7 @@ core-engine/src/main/kotlin/app/brujula/engine/IncomeScheduler.kt
 core-engine/src/main/kotlin/app/brujula/engine/Ledger.kt
 core-engine/src/main/kotlin/app/brujula/engine/LedgerAuditor.kt
 core-engine/src/main/kotlin/app/brujula/engine/Lots.kt
+core-engine/src/main/kotlin/app/brujula/engine/Orders.kt
 core-engine/src/main/kotlin/app/brujula/engine/json/Json.kt
 core-engine/src/test/kotlin/app/brujula/engine/AuditTest.kt
 core-engine/src/test/kotlin/app/brujula/engine/BankTest.kt
@@ -53,6 +55,11 @@ core-model/src/main/kotlin/app/brujula/model/Ids.kt
 core-model/src/main/kotlin/app/brujula/model/Money.kt
 core-model/src/main/kotlin/app/brujula/model/Units.kt
 core-model/src/test/kotlin/app/brujula/model/MoneyTest.kt
+core-trading/build.gradle.kts
+core-trading/src/main/kotlin/app/brujula/trading/Config.kt
+core-trading/src/main/kotlin/app/brujula/trading/OrderTimeline.kt
+core-trading/src/main/kotlin/app/brujula/trading/TradingService.kt
+core-trading/src/test/kotlin/app/brujula/trading/TradingTest.kt
 data-db/build.gradle.kts
 data-db/src/main/AndroidManifest.xml
 data-db/src/main/kotlin/app/brujula/data/HttpUrlFetcher.kt
@@ -60,6 +67,7 @@ data-db/src/main/kotlin/app/brujula/data/SqliteBankStore.kt
 data-db/src/main/kotlin/app/brujula/data/SqliteMarketStore.kt
 docs/ARQUITECTURA.md
 docs/CONFIGURACION.md
+docs/CONTRATACION.md
 docs/DATOS_DE_MERCADO.md
 docs/NUCLEO_FINANCIERO.md
 gradle.properties
