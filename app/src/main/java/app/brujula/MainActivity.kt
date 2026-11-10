@@ -176,5 +176,5 @@ private fun PantallaInicial(
 }
 
 private object BuildConfigInfo {
-    const val VERSION = "0.4.0"
+    const val VERSION = "0.4.1"
 }

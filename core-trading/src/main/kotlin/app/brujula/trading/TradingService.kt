@@ -236,7 +236,8 @@ class TradingService(
 
     private fun executeBuy(accountId: AccountId, o: OrderState, d: AssetDefinition, day: LocalDate, price: Money, report: MutableList<String>): Attempt {
         val spec = o.spec
-        val units = spec.amount!!.amount.divide(price.amount, config.unitScale(d.kind), RoundingMode.DOWN)
+        val amount = spec.amount!!
+        val units = amount.amount.divide(price.amount, config.unitScale(d.kind), RoundingMode.DOWN)
         if (units.signum() <= 0) {
             closeRejected(accountId, o, day, "Importe demasiado pequeño para este precio", report)
             return Attempt.DONE
@@ -245,10 +246,10 @@ class TradingService(
         try {
             bank.post(
                 accountId,
-                Purchase(day, spec.assetId, spec.amount!!, Units.of(units), spec.fees, "Ejecución de la orden ${o.orderId}",
+                Purchase(day, spec.assetId, amount, Units.of(units), spec.fees, "Ejecución de la orden ${o.orderId}",
                     orderId = o.orderId, price = price, settlementDate = sd, lockUnits = d.kind == AssetKind.INDEX_FUND),
             )
-            report += "Compra ejecutada: ${d.name} · ${spec.amount} € a $price (liquida el $sd)"
+            report += "Compra ejecutada: ${d.name} · $amount € a $price (liquida el $sd)"
         } catch (e: LedgerException) {
             closeRejected(accountId, o, day, e.message ?: "No se pudo ejecutar", report)
         }
@@ -257,15 +258,16 @@ class TradingService(
 
     private fun executeSell(accountId: AccountId, o: OrderState, d: AssetDefinition, day: LocalDate, price: Money, report: MutableList<String>): Attempt {
         val spec = o.spec
-        val gross = (price * spec.units!!).roundedToCents()
+        val units = spec.units!!
+        val gross = (price * units).roundedToCents()
         val fee = config.fees.fee(d.kind, OrderSide.SELL, gross).let { if (it > gross) gross else it }
         val sd = config.settlement.settlementDate(d, OrderSide.SELL, day)
         try {
             bank.post(
                 accountId,
-                Sale(day, spec.assetId, spec.units, gross, fee, "Ejecución de la orden ${o.orderId}", orderId = o.orderId, price = price, settlementDate = sd),
+                Sale(day, spec.assetId, units, gross, fee, "Ejecución de la orden ${o.orderId}", orderId = o.orderId, price = price, settlementDate = sd),
             )
-            report += "Venta ejecutada: ${d.name} · ${spec.units} u. a $price (efectivo disponible el $sd)"
+            report += "Venta ejecutada: ${d.name} · $units u. a $price (efectivo disponible el $sd)"
         } catch (e: LedgerException) {
             closeRejected(accountId, o, day, e.message ?: "No se pudo ejecutar", report)
         }
@@ -275,7 +277,9 @@ class TradingService(
     private fun executeTransfer(accountId: AccountId, o: OrderState, day: LocalDate, from: PricePoint, to: PricePoint, report: MutableList<String>): Attempt {
         val spec = o.spec
         val dFrom = def(spec.assetId)
-        val value = (Money.of(from.close) * spec.units!!).roundedToCents()
+        val unitsOut = spec.units!!
+        val toAsset = spec.toAssetId!!
+        val value = (Money.of(from.close) * unitsOut).roundedToCents()
         val unitsIn = value.amount.divide(to.close, config.unitScale(AssetKind.INDEX_FUND), RoundingMode.DOWN)
         if (unitsIn.signum() <= 0) {
             closeRejected(accountId, o, day, "Importe demasiado pequeño para el traspaso", report)
@@ -285,9 +289,9 @@ class TradingService(
         try {
             bank.post(
                 accountId,
-                FundTransfer(day, spec.assetId, spec.toAssetId!!, spec.units, Units.of(unitsIn), o.orderId, sd, "Traspaso de ${value} € de valor"),
+                FundTransfer(day, spec.assetId, toAsset, unitsOut, Units.of(unitsIn), o.orderId, sd, "Traspaso de ${value} € de valor"),
             )
-            report += "Traspaso ejecutado: ${spec.units} u. de ${def(spec.assetId).name} → ${def(spec.toAssetId!!).name} (${unitsIn.toPlainString()} u.)"
+            report += "Traspaso ejecutado: $unitsOut u. de ${dFrom.name} → ${def(toAsset).name} (${unitsIn.toPlainString()} u.)"
         } catch (e: LedgerException) {
             closeRejected(accountId, o, day, e.message ?: "No se pudo ejecutar", report)
         }
@@ -302,7 +306,8 @@ class TradingService(
     private fun settleAndExpire(accountId: AccountId, day: LocalDate, report: MutableList<String>) {
         val state = bank.get(accountId).state
         for (o in state.orders.values) {
-            if (o.status == OrderStatus.EXECUTED && o.settlesOn != null && !o.settlesOn.isAfter(day)) {
+            val settlesOn = o.settlesOn
+            if (o.status == OrderStatus.EXECUTED && settlesOn != null && !settlesOn.isAfter(day)) {
                 bank.post(accountId, OrderSettled(day, o.orderId))
                 report += "Orden ${o.orderId} liquidada"
             }

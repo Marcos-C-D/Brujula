@@ -1,5 +1,8 @@
 # Cambios
 
+## 0.4.1 · corrección de compilación
+- `TradingService`: eliminados los smart casts sobre propiedades de otro módulo (`units`, `settlesOn`) que Gradle rechazaba.
+
 ## 0.4.0 · Fase 3 · órdenes, liquidaciones y traspasos
 - Las órdenes son eventos del libro: solicitada → aceptada → ejecutada → liquidada (o cancelada, caducada, rechazada), con
   cronología consultable por orden. Las reservas de efectivo (compras) y de unidades (ventas, traspasos) se derivan de las
