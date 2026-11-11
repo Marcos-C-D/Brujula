@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.5.0 · Fase 4 · fiscalidad española
+- Nuevo módulo `core-tax`: escala del ahorro con vigencia por ejercicio (30 % desde 300.000 €), FIFO fiscal, regla de recompra
+  (2 meses ETF, 1 año fondos), integración y compensación (25 %, arrastre 4 años), deducción por doble imposición y resultado
+  anual (pagar o devolver).
+- Nuevos eventos del libro: dividendo cobrado, retención practicada y liquidación del IRPF.
+- Calendario de la renta: campaña 2026 oficial y estimaciones para otros años; pago único o fraccionado 60/40; devolución a los 6 meses;
+  el efectivo puede quedar negativo al pagar.
+- Retención del 19 % en dividendos y en reembolsos de fondos con ganancia; traspasos de fondos sin tributar.
+- Dividendos reales desde Yahoo (solo activos en EUR); base de datos de mercado migra a la versión 2 sin perder datos.
+- Avisos informativos de los modelos 720/721. 163 pruebas automáticas en total.
+
 ## 0.4.1 · corrección de compilación
 - `TradingService`: eliminados los smart casts sobre propiedades de otro módulo (`units`, `settlesOn`) que Gradle rechazaba.
 

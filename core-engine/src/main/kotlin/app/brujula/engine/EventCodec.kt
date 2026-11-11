@@ -36,6 +36,12 @@ object EventCodec {
             e.settlementDate?.let { m["settlementDate"] = it.toString() }
         }
         is CashAdjustment -> linkedMapOf("type" to "ADJUSTMENT", "date" to e.date.toString(), "amount" to e.amount.toString(), "reason" to e.reason, "note" to e.note)
+        is DividendReceived -> linkedMapOf("type" to "DIVIDEND", "date" to e.date.toString(), "asset" to e.assetId.value, "gross" to e.gross.toString(),
+            "foreignTax" to e.foreignTax.toString(), "withholding" to e.withholding.toString(), "note" to e.note)
+        is WithholdingPaid -> linkedMapOf<String, Any?>("type" to "WITHHOLDING", "date" to e.date.toString(), "asset" to e.assetId.value,
+            "amount" to e.amount.toString(), "note" to e.note).also { m -> e.saleSeq?.let { m["saleSeq"] = it } }
+        is TaxSettlement -> linkedMapOf("type" to "TAX_SETTLEMENT", "date" to e.date.toString(), "taxYear" to e.taxYear, "installment" to e.installment,
+            "amount" to e.amount.toString(), "note" to e.note)
         is OrderPlaced -> linkedMapOf("type" to "ORDER_PLACED", "date" to e.date.toString(), "orderId" to e.orderId, "spec" to specMap(e.spec), "note" to e.note)
         is OrderRejected -> linkedMapOf("type" to "ORDER_REJECTED", "date" to e.date.toString(), "orderId" to e.orderId, "spec" to specMap(e.spec), "reason" to e.reason, "note" to e.note)
         is OrderClosed -> linkedMapOf("type" to "ORDER_CLOSED", "date" to e.date.toString(), "orderId" to e.orderId, "status" to e.status.name, "reason" to e.reason, "note" to e.note)
@@ -107,6 +113,13 @@ object EventCodec {
                     orderId = optText(m, "orderId"), price = optText(m, "price")?.let { moneyOf(it, "price") },
                     settlementDate = optText(m, "settlementDate")?.let { parseDate(it) },
                 )
+                "DIVIDEND" -> DividendReceived(
+                    date(m, "date"), AssetId(text(m, "asset")), money(m, "gross"), money(m, "foreignTax"), money(m, "withholding"), optText(m, "note") ?: "",
+                )
+                "WITHHOLDING" -> WithholdingPaid(
+                    date(m, "date"), AssetId(text(m, "asset")), money(m, "amount"), (m["saleSeq"] as? BigDecimal)?.toLong(), optText(m, "note") ?: "",
+                )
+                "TAX_SETTLEMENT" -> TaxSettlement(date(m, "date"), int(m, "taxYear"), int(m, "installment"), money(m, "amount"), optText(m, "note") ?: "")
                 "ORDER_PLACED" -> OrderPlaced(date(m, "date"), text(m, "orderId"), specFrom(m["spec"]), optText(m, "note") ?: "")
                 "ORDER_REJECTED" -> {
                     val reason = text(m, "reason")

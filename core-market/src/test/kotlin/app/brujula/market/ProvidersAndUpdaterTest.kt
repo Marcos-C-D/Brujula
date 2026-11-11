@@ -31,6 +31,15 @@ class ProvidersAndUpdaterTest {
     }
 
     @Test
+    fun yahooLeeLosDividendosPorUnidad() {
+        val body = """{"chart":{"result":[{"meta":{"currency":"EUR","gmtoffset":3600},"timestamp":[1767254400,1767600000],
+          "indicators":{"quote":[{"close":[10.0,11.0]}]},
+          "events":{"dividends":{"1767254400":{"amount":0.25,"date":1767254400},"1767600000":{"amount":0,"date":1767600000}}}}],"error":null}}"""
+        val f = YahooChartProvider(http(200, body)).fetchHistory("X", now)
+        assertEquals(listOf(DividendEvent(d("2026-01-01"), bd("0.25"))), f.dividends) // el de importe 0 se descarta
+    }
+
+    @Test
     fun yahooRechazaErroresYRespuestasMalas() {
         val err = """{"chart":{"result":null,"error":{"code":"Not Found","description":"No data found, symbol may be delisted"}}}"""
         val e = assertFailsWith<ProviderException> { YahooChartProvider(http(200, err)).fetchHistory("Z", now) }

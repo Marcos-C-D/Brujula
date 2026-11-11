@@ -26,7 +26,16 @@ data class AccountState(
     val orders: Map<String, OrderState> = emptyMap(),
     val unsettled: List<UnsettledProceeds> = emptyList(),
     val transfers: List<TransferRecord> = emptyList(),
+    val dividends: List<DividendRecord> = emptyList(),
+    val withholdings: List<WithholdingRecord> = emptyList(),
+    val taxPostings: List<TaxPosting> = emptyList(),
 ) {
+    /** Dividendos netos cobrados (bruto - impuesto en origen - retención). */
+    val dividendsNet: Money get() = dividends.fold(Money.ZERO) { acc, d -> acc + d.gross - d.foreignTax - d.withholding }
+
+    /** Retenciones practicadas al reembolsar fondos. */
+    val withholdingsTotal: Money get() = withholdings.fold(Money.ZERO) { acc, w -> acc + w.amount }
+
     /** Posiciones abiertas (unidades > 0), ordenadas por identificador. Incluyen las unidades aún bloqueadas. */
     val positions: List<Position>
         get() = lotsByAsset.entries
@@ -194,6 +203,27 @@ data class AccountState(
                 cash = cash + event.amount,
                 adjustmentsTotal = adjustmentsTotal + event.amount,
             )
+
+            is DividendReceived -> base.copy(
+                cash = cash + event.net,
+                dividends = dividends + DividendRecord(seq, event.date, event.assetId, event.gross, event.foreignTax, event.withholding),
+            )
+
+            is WithholdingPaid -> base.copy(
+                cash = cash - event.amount,
+                withholdings = withholdings + WithholdingRecord(seq, event.date, event.assetId, event.amount, event.saleSeq),
+            )
+
+            is TaxSettlement -> {
+                if (taxPostings.any { it.taxYear == event.taxYear && it.installment == event.installment }) {
+                    throw InvalidEntryException("La liquidación del IRPF ${event.taxYear} (plazo ${event.installment}) ya está registrada")
+                }
+                base.copy(
+                    cash = cash + event.amount,
+                    adjustmentsTotal = adjustmentsTotal + event.amount,
+                    taxPostings = taxPostings + TaxPosting(seq, event.date, event.taxYear, event.installment, event.amount),
+                )
+            }
 
             is OrderPlaced -> {
                 if (event.orderId in orders) throw InvalidEntryException("Ya existe la orden ${event.orderId}")

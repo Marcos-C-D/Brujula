@@ -52,6 +52,8 @@ class TradingService(
     private val config: TradingConfig = TradingConfig(),
     private val clock: () -> Instant,
     private val newOrderId: () -> String = { UUID.randomUUID().toString() },
+    /** Se ejecuta al final de cada día procesado (por ejemplo, los hechos fiscales). Devuelve líneas de informe. */
+    private val afterDay: ((AccountId, LocalDate) -> List<String>)? = null,
 ) {
     private fun today(): LocalDate = UpdateSchedule.today(clock())
 
@@ -131,6 +133,7 @@ class TradingService(
             placeScheduled(accountId, day, report)
             if (!executeOrders(accountId, day, knownThrough, report)) break
             settleAndExpire(accountId, day, report)
+            afterDay?.let { report += it(accountId, day) }
             day = day.plusDays(1)
         }
         return report

@@ -35,7 +35,7 @@ class YahooChartProvider(private val http: HttpFetcher) : HistoryProvider {
 
     fun url(symbol: String, now: Instant) =
         "https://query1.finance.yahoo.com/v8/finance/chart/${java.net.URLEncoder.encode(symbol, "UTF-8")}" +
-            "?period1=0&period2=${now.epochSecond}&interval=1d&includeAdjustedClose=true"
+            "?period1=0&period2=${now.epochSecond}&interval=1d&includeAdjustedClose=true&events=div"
 
     override fun fetchHistory(symbol: String, now: Instant): FetchedSeries {
         val resp = try {
@@ -87,7 +87,17 @@ class YahooChartProvider(private val http: HttpFetcher) : HistoryProvider {
         }
         if (points.isEmpty()) throw ProviderException(name, "$symbol no devolvió ningún precio válido")
         val warnings = if (discarded > 0) listOf("$discarded puntos descartados por datos no válidos") else emptyList()
-        return FetchedSeries(symbol, currency, name, points, warnings, now)
+        val dividends = ArrayList<DividendEvent>()
+        val divMap = (result["events"] as? Map<*, *>)?.get("dividends") as? Map<*, *>
+        divMap?.values?.forEach { raw ->
+            val m = raw as? Map<*, *> ?: return@forEach
+            val amount = toBd(m["amount"])
+            val epoch = toBd(m["date"])?.toLong()
+            if (amount != null && amount.isUsable() && epoch != null) {
+                dividends += DividendEvent(Instant.ofEpochSecond(epoch + offset).atZone(ZoneOffset.UTC).toLocalDate(), amount)
+            }
+        }
+        return FetchedSeries(symbol, currency, name, points, warnings, now, dividends.sortedBy { it.date })
     }
 }
 

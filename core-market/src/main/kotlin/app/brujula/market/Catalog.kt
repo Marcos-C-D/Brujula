@@ -23,6 +23,8 @@ data class AssetDefinition(
     val sources: List<SourceSpec>,
     /** Calendario de negociación del proxy (null = 24/7). */
     val marketId: String?,
+    /** true si el producto reparte dividendos (distribución); false = acumulación (no tributa hasta vender). */
+    val distributes: Boolean = false,
 ) {
     val proxyNote: String
         get() = when (kind) {
@@ -58,7 +60,7 @@ object AssetCatalog {
         AssetDefinition(AssetId("etf-tecnologia"), "Tecnología", "ETF", AssetKind.ETF, "el sector tecnológico", y("QDVE.DE", "IUIT.L"), "XETRA"),
         AssetDefinition(AssetId("etf-emergentes"), "Mercados emergentes (ETF)", "ETF", AssetKind.ETF, "los mercados emergentes", y("EMIM.AS", "EIMI.L"), "EURONEXT"),
         AssetDefinition(AssetId("etf-bonos"), "Bonos", "ETF", AssetKind.ETF, "la renta fija agregada", y("IEAG.AS", "EUNA.DE"), "EURONEXT"),
-        AssetDefinition(AssetId("etf-dividendos"), "Dividendos", "ETF", AssetKind.ETF, "las acciones con altos dividendos", y("EXSH.DE", "VHYL.AS"), "XETRA"),
+        AssetDefinition(AssetId("etf-dividendos"), "Dividendos", "ETF", AssetKind.ETF, "las acciones con altos dividendos", y("EXSH.DE", "VHYL.AS"), "XETRA", distributes = true),
 
         AssetDefinition(
             AssetId("bitcoin"), "Bitcoin", "Criptomonedas", AssetKind.CRYPTO, "Bitcoin",

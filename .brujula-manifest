@@ -55,6 +55,11 @@ core-model/src/main/kotlin/app/brujula/model/Ids.kt
 core-model/src/main/kotlin/app/brujula/model/Money.kt
 core-model/src/main/kotlin/app/brujula/model/Units.kt
 core-model/src/test/kotlin/app/brujula/model/MoneyTest.kt
+core-tax/build.gradle.kts
+core-tax/src/main/kotlin/app/brujula/tax/Calculator.kt
+core-tax/src/main/kotlin/app/brujula/tax/Rules.kt
+core-tax/src/main/kotlin/app/brujula/tax/Service.kt
+core-tax/src/test/kotlin/app/brujula/tax/TaxTest.kt
 core-trading/build.gradle.kts
 core-trading/src/main/kotlin/app/brujula/trading/Config.kt
 core-trading/src/main/kotlin/app/brujula/trading/OrderTimeline.kt
@@ -69,6 +74,7 @@ docs/ARQUITECTURA.md
 docs/CONFIGURACION.md
 docs/CONTRATACION.md
 docs/DATOS_DE_MERCADO.md
+docs/FISCALIDAD.md
 docs/NUCLEO_FINANCIERO.md
 gradle.properties
 settings.gradle.kts

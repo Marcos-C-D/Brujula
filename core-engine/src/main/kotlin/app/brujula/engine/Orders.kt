@@ -147,3 +147,9 @@ data class ScheduledPlan(
 
     fun orderId(periodKey: String): String = "plan-$id-$periodKey"
 }
+
+data class DividendRecord(val seq: Long, val date: LocalDate, val assetId: AssetId, val gross: Money, val foreignTax: Money, val withholding: Money)
+
+data class WithholdingRecord(val seq: Long, val date: LocalDate, val assetId: AssetId, val amount: Money, val saleSeq: Long?)
+
+data class TaxPosting(val seq: Long, val date: LocalDate, val taxYear: Int, val installment: Int, val amount: Money)

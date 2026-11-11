@@ -54,6 +54,9 @@ class PriceSeries private constructor(val points: List<PricePoint>) {
     }
 }
 
+/** Dividendo por unidad en la divisa de la serie, con su fecha ex-dividendo. */
+data class DividendEvent(val date: LocalDate, val amount: BigDecimal)
+
 /** Resultado crudo de un proveedor, antes de guardarse. */
 data class FetchedSeries(
     val symbol: String,
@@ -63,4 +66,5 @@ data class FetchedSeries(
     /** Incidencias no fatales (por ejemplo, puntos descartados por no ser válidos). */
     val warnings: List<String>,
     val fetchedAt: Instant,
+    val dividends: List<DividendEvent> = emptyList(),
 )

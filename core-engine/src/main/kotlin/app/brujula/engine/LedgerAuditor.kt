@@ -47,6 +47,9 @@ object LedgerAuditor {
                     sold.merge(e.assetId, e.units) { a, b -> a + b }
                 }
                 is CashAdjustment -> { cash += e.amount; adjustments += e.amount }
+                is DividendReceived -> cash += e.net
+                is WithholdingPaid -> cash -= e.amount
+                is TaxSettlement -> { cash += e.amount; adjustments += e.amount }
                 is FundTransfer, is OrderPlaced, is OrderRejected, is OrderClosed, is OrderSettled -> Unit
             }
         }
@@ -100,7 +103,7 @@ object LedgerAuditor {
 
         // Identidad global: efectivo + coste en cartera = aportaciones + beneficio realizado + ajustes
         val left = state.cash + state.investedCost
-        val right = state.contributions + state.realizedGain + state.adjustmentsTotal
+        val right = state.contributions + state.realizedGain + state.adjustmentsTotal + state.dividendsNet - state.withholdingsTotal
         if (left != right) problems += "Identidad global rota: efectivo+coste $left ≠ aportaciones+realizado+ajustes $right"
 
         return problems

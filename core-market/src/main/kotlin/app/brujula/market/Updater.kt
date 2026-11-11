@@ -15,6 +15,8 @@ data class StoredSeries(
     val fetchedAt: Instant?,
     val lastAttemptAt: Instant?,
     val lastError: String?,
+    /** Dividendos por unidad en la divisa de la serie (solo se usan los de series en EUR). */
+    val dividends: List<DividendEvent> = emptyList(),
 )
 
 data class StoredFx(val currency: String, val rates: Map<LocalDate, java.math.BigDecimal>, val fetchedAt: Instant)
@@ -91,7 +93,7 @@ class MarketUpdater(
                 if (fetched.points.size < 2) { errors += "[${provider.name}] ${src.symbol}: menos de 2 precios"; continue }
                 val merged = merge(def, previous, fetched, errors, src.symbol, provider.name) ?: continue
                 store.saveSeries(
-                    StoredSeries(def.id, src.symbol, fetched.provider, fetched.currency, merged, now, now, null),
+                    StoredSeries(def.id, src.symbol, fetched.provider, fetched.currency, merged, now, now, null, fetched.dividends),
                 )
                 return UpdateOutcome.Updated(def.id, src.symbol, fetched.provider, merged.size, fetched.warnings, errors.toList())
             } catch (e: ProviderException) {

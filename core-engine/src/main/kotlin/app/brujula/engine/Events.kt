@@ -179,3 +179,58 @@ data class FundTransfer(
         if (!unitsOut.isPositive || !unitsIn.isPositive) throw InvalidEntryException("Las unidades del traspaso deben ser positivas")
     }
 }
+
+/**
+ * Dividendo cobrado: el efectivo sube en bruto - impuesto pagado en origen - retención. El bruto es el rendimiento del capital mobiliario.
+ */
+data class DividendReceived(
+    override val date: LocalDate,
+    val assetId: AssetId,
+    val gross: Money,
+    val foreignTax: Money = Money.ZERO,
+    val withholding: Money = Money.ZERO,
+    override val note: String = "",
+) : LedgerEvent {
+    init {
+        if (!gross.isPositive) throw InvalidEntryException("El dividendo debe ser positivo")
+        if (foreignTax.isNegative || withholding.isNegative) throw InvalidEntryException("Las retenciones no pueden ser negativas")
+        if (foreignTax + withholding > gross) throw InvalidEntryException("Las retenciones no pueden superar el dividendo")
+        gross.requireCents("El dividendo")
+        foreignTax.requireCents("El impuesto en origen")
+        withholding.requireCents("La retención")
+    }
+    val net: Money get() = gross - foreignTax - withholding
+}
+
+/** Retención a cuenta del IRPF practicada al reembolsar un fondo (se deduce del efectivo y se descuenta en la declaración). */
+data class WithholdingPaid(
+    override val date: LocalDate,
+    val assetId: AssetId,
+    val amount: Money,
+    val saleSeq: Long? = null,
+    override val note: String = "",
+) : LedgerEvent {
+    init {
+        if (!amount.isPositive) throw InvalidEntryException("La retención debe ser positiva")
+        amount.requireCents("La retención")
+    }
+}
+
+/**
+ * Pago (importe negativo) o devolución (positivo) de la declaración de la renta de [taxYear]. [installment] 1 o 2 (pago fraccionado).
+ * Puede dejar el efectivo en negativo: no se bloquea el pago ni se inventa dinero.
+ */
+data class TaxSettlement(
+    override val date: LocalDate,
+    val taxYear: Int,
+    val installment: Int,
+    val amount: Money,
+    override val note: String = "",
+) : LedgerEvent {
+    init {
+        if (amount.isZero) throw InvalidEntryException("Una liquidación fiscal no puede ser cero")
+        if (installment !in 1..2) throw InvalidEntryException("El plazo debe ser 1 o 2")
+        if (taxYear !in 2000..2200) throw InvalidEntryException("Ejercicio fiscal no válido")
+        amount.requireCents("La liquidación fiscal")
+    }
+}

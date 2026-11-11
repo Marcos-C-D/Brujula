@@ -146,7 +146,7 @@ private fun PantallaInicial(
             Text("Brújula", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
             Text("Simulador de inversión", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Fase 3 · órdenes y liquidaciones (v${BuildConfigInfo.VERSION})",
+                "Fase 4 · fiscalidad española (v${BuildConfigInfo.VERSION})",
                 modifier = Modifier.padding(top = 16.dp),
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -176,5 +176,5 @@ private fun PantallaInicial(
 }
 
 private object BuildConfigInfo {
-    const val VERSION = "0.4.1"
+    const val VERSION = "0.5.0"
 }

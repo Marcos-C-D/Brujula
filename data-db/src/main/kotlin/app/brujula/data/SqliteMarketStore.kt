@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import app.brujula.market.DividendEvent
 import app.brujula.market.MarketStore
 import app.brujula.market.PricePoint
 import app.brujula.market.StoredFx
@@ -39,10 +40,22 @@ class SqliteMarketStore(context: Context, dbName: String = DEFAULT_DB_NAME) :
                 "rate TEXT NOT NULL, PRIMARY KEY (currency, date))",
         )
         db.execSQL("CREATE TABLE kv (key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)")
+        createDividendTable(db)
+    }
+
+    private fun createDividendTable(db: SQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS dividend (asset_id TEXT NOT NULL REFERENCES series_meta(asset_id) ON DELETE CASCADE, " +
+                "date TEXT NOT NULL, amount TEXT NOT NULL, PRIMARY KEY (asset_id, date))",
+        )
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Versión 1: aún no hay migraciones. Estos datos se pueden volver a descargar, pero nunca se borran sin avisar.
+        // v1 -> v2: se añade la tabla de dividendos sin tocar nada de lo guardado.
+        if (oldVersion == 1 && newVersion == 2) {
+            createDividendTable(db)
+            return
+        }
         throw IllegalStateException("Migración de base de datos no soportada: $oldVersion -> $newVersion")
     }
 
@@ -68,9 +81,13 @@ class SqliteMarketStore(context: Context, dbName: String = DEFAULT_DB_NAME) :
                 )
             }
         }
+        val dividends = ArrayList<DividendEvent>()
+        db.rawQuery("SELECT date, amount FROM dividend WHERE asset_id = ? ORDER BY date", arrayOf(assetId.value)).use { c ->
+            while (c.moveToNext()) dividends += DividendEvent(LocalDate.parse(c.getString(0)), BigDecimal(c.getString(1)))
+        }
         return StoredSeries(
             assetId, meta[0]!!, meta[1]!!, meta[2]!!, points,
-            meta[3]?.let { Instant.parse(it) }, meta[4]?.let { Instant.parse(it) }, meta[5],
+            meta[3]?.let { Instant.parse(it) }, meta[4]?.let { Instant.parse(it) }, meta[5], dividends,
         )
     }
 
@@ -103,6 +120,14 @@ class SqliteMarketStore(context: Context, dbName: String = DEFAULT_DB_NAME) :
                 }
             } finally {
                 st.close()
+            }
+            db.delete("dividend", "asset_id = ?", arrayOf(series.assetId.value))
+            for (dv in series.dividends) {
+                db.insertOrThrow("dividend", null, ContentValues().apply {
+                    put("asset_id", series.assetId.value)
+                    put("date", dv.date.toString())
+                    put("amount", dv.amount.toPlainString())
+                })
             }
             db.setTransactionSuccessful()
         } finally {
@@ -164,6 +189,6 @@ class SqliteMarketStore(context: Context, dbName: String = DEFAULT_DB_NAME) :
 
     companion object {
         const val DEFAULT_DB_NAME = "brujula-market.db"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
     }
 }
