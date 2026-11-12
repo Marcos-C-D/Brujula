@@ -56,6 +56,12 @@ fun AppRoot(c: UiController, context: Context) {
                         TextButton(onClick = { c.message.value = null }) { Text("OK") }
                     }
                 }
+                c.info.value?.let { msg ->
+                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("✔ $msg", style = MaterialTheme.typography.bodySmall, color = Esmeralda, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { c.info.value = null }) { Text("OK") }
+                    }
+                }
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     when {
                         d.error != null -> ErrorScreen(d.error)
@@ -75,10 +81,13 @@ private fun Content(c: UiController, context: Context) {
         is SubScreen.Asset -> AssetDetailScreen(c.detail.value)
         SubScreen.Accounts -> AccountsScreen(c)
         SubScreen.Diagnostics -> DiagnosticsScreen(c, context)
+        SubScreen.Stats -> StatsScreen(c)
+        SubScreen.Tax -> TaxScreen(c)
         SubScreen.None -> when (c.tab.value) {
             Tab.HOME -> HomeScreen(d) { c.sub.value = SubScreen.Accounts }
             Tab.PORTFOLIO -> PortfolioScreen(d)
             Tab.MARKETS -> MarketsScreen(d) { c.openAsset(it) }
+            Tab.OPERATIONS -> OperationsScreen(c)
             Tab.MORE -> MoreScreen(c)
         }
     }

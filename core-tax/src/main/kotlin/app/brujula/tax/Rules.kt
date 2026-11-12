@@ -78,7 +78,41 @@ data class TaxSettings(
     val applyRepurchaseToCrypto: Boolean = false,
     /** Impuesto retenido en el extranjero sobre dividendos por activo (0 por defecto). */
     val foreignWithholdingRate: Map<AssetId, BigDecimal> = emptyMap(),
-)
+) {
+    /** Opciones como texto clave-valor para guardarlas en la cuenta. */
+    fun toOptions(): Map<String, String> {
+        val m = LinkedHashMap<String, String>()
+        m["payment"] = payment.name
+        m["refundMonths"] = refundMonthsAfterCampaign.toString()
+        m["withholdFunds"] = withholdOnFundRedemptions.toString()
+        m["withholdDividends"] = withholdOnDividends.toString()
+        m["cryptoRepurchase"] = applyRepurchaseToCrypto.toString()
+        otherSavingsBase.forEach { (year, amount) -> m["otherBase.$year"] = amount.toString() }
+        return m
+    }
+
+    companion object {
+        /** Lee las opciones guardadas; lo que falta o no es válido usa el valor por defecto. */
+        fun fromOptions(options: Map<String, String>): TaxSettings {
+            val d = TaxSettings()
+            val other = HashMap<Int, Money>()
+            for ((k, v) in options) {
+                if (!k.startsWith("otherBase.")) continue
+                val year = k.removePrefix("otherBase.").toIntOrNull() ?: continue
+                val amount = try { Money.of(v) } catch (e: NumberFormatException) { continue }
+                if (!amount.isNegative) other[year] = amount
+            }
+            return TaxSettings(
+                otherSavingsBase = other,
+                payment = options["payment"]?.let { p -> PaymentMode.values().firstOrNull { it.name == p } } ?: d.payment,
+                refundMonthsAfterCampaign = options["refundMonths"]?.toIntOrNull()?.takeIf { it in 0..12 } ?: d.refundMonthsAfterCampaign,
+                withholdOnFundRedemptions = options["withholdFunds"]?.toBooleanStrictOrNull() ?: d.withholdOnFundRedemptions,
+                withholdOnDividends = options["withholdDividends"]?.toBooleanStrictOrNull() ?: d.withholdOnDividends,
+                applyRepurchaseToCrypto = options["cryptoRepurchase"]?.toBooleanStrictOrNull() ?: d.applyRepurchaseToCrypto,
+            )
+        }
+    }
+}
 
 /** Calendario de una campaña de la renta. */
 data class Campaign(

@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.7.0 · Fase 5b-1 · operaciones, estadísticas y fiscalidad
+- Pestaña **Operaciones**: nueva orden (comprar, vender, traspasar; a mercado, limitada y stop-loss; caducidad), órdenes pendientes con
+  cancelación, historial de órdenes con su cronología (solicitada → aceptada → ejecutada → liquidada) e historial de movimientos
+  con el efectivo tras cada uno, y planes periódicos (crear, pausar, reanudar, eliminar).
+- **Estadísticas**: rentabilidad total, ponderada por tiempo y anualizada, resultados acumulados, comparación con el índice elegido,
+  evolución del patrimonio y del efectivo, y reparto por activos y categorías.
+- **Fiscalidad**: próximas fechas de pago o devolución, resumen por ejercicio y opciones fiscales por cuenta (pago fraccionado, otras
+  rentas del ahorro, retenciones, recompra con Bitcoin), guardadas con la cuenta y en las copias de seguridad.
+- Núcleo: opciones fiscales por cuenta, modelos de órdenes, movimientos y fiscalidad. 184 pruebas automáticas.
+- Pendiente (fase 5b-2): copias de seguridad desde la app, modo de avance de tiempo y notificaciones.
+
 ## 0.6.0 · Fase 5a · interfaz (Inicio, Cartera, Mercados, Cuentas)
 - Nuevo módulo `core-app` (Kotlin puro, probado): formato es-ES, valoración de cuenta (patrimonio, efectivo disponible, beneficio,
   reparto por activos y categorías), evolución del patrimonio, estadísticas (rentabilidad ponderada por tiempo y anualizada,

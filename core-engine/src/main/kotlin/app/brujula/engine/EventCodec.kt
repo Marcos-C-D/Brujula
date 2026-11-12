@@ -161,6 +161,7 @@ object EventCodec {
         "archiveIntervals" to c.archiveIntervals.map {
             linkedMapOf("from" to it.from.toString(), "to" to it.to?.toString())
         },
+        "taxOptions" to LinkedHashMap<String, Any?>(c.taxOptions),
         "schedules" to c.schedules.map { p ->
             linkedMapOf<String, Any?>(
                 "id" to p.id, "side" to p.side.name, "asset" to p.assetId.value,
@@ -195,8 +196,11 @@ object EventCodec {
                     startDate = date(p, "startDate"), endDate = optText(p, "endDate")?.let { d -> parseDate(d) }, paused = p["paused"] == true,
                 )
             }
+            val taxOptions = (m["taxOptions"] as? Map<*, *>)?.entries?.associate { (k, v) ->
+                (k as? String ?: throw CodecException("Opción fiscal no válida")) to (v as? String ?: throw CodecException("Opción fiscal no válida: $k"))
+            } ?: emptyMap()
             if (history.isEmpty()) throw CodecException("La cuenta no tiene configuración de ingresos")
-            return AccountConfig(AccountId(text(m, "id")), text(m, "name"), date(m, "createdOn"), history, intervals, schedules)
+            return AccountConfig(AccountId(text(m, "id")), text(m, "name"), date(m, "createdOn"), history, intervals, schedules, taxOptions)
         } catch (e: CodecException) {
             throw e
         } catch (e: BankException) {

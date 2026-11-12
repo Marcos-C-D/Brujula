@@ -11,6 +11,8 @@ data class AccountConfig(
     val incomeHistory: List<IncomeConfig>,
     val archiveIntervals: List<ArchiveInterval>,
     val schedules: List<ScheduledPlan> = emptyList(),
+    /** Opciones fiscales de la cuenta (texto clave-valor; las interpreta el módulo fiscal). */
+    val taxOptions: Map<String, String> = emptyMap(),
 )
 
 /** Cuenta tal y como se guarda: configuración + todos sus movimientos, en orden. */

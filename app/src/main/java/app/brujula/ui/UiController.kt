@@ -13,13 +13,21 @@ import app.brujula.engine.Bank
 import app.brujula.engine.LedgerAuditor
 import app.brujula.model.AccountId
 import app.brujula.model.AssetId
+import app.brujula.TradingModule
+import app.brujula.engine.Frequency
+import app.brujula.engine.OrderSide
+import app.brujula.engine.OrderType
+import app.brujula.engine.ScheduledPlan
 import app.brujula.model.Money
+import app.brujula.model.Units
+import app.brujula.tax.TaxSettings
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 enum class Tab(val label: String, val glyph: String) {
-    HOME("Inicio", "⌂"), PORTFOLIO("Cartera", "◔"), MARKETS("Mercados", "↗"), MORE("Más", "⋯"),
+    HOME("Inicio", "⌂"), PORTFOLIO("Cartera", "◔"), MARKETS("Mercados", "↗"), OPERATIONS("Operaciones", "⇄"), MORE("Más", "⋯"),
 }
 
 sealed class SubScreen {
@@ -27,6 +35,8 @@ sealed class SubScreen {
     data class Asset(val id: AssetId) : SubScreen()
     object Accounts : SubScreen()
     object Diagnostics : SubScreen()
+    object Stats : SubScreen()
+    object Tax : SubScreen()
 }
 
 fun formatInstant(i: Instant?): String =
@@ -40,6 +50,8 @@ class UiController(val container: AppContainer) {
     val sub = mutableStateOf<SubScreen>(SubScreen.None)
     val detail = mutableStateOf<AssetDetail?>(null)
     val message = mutableStateOf<String?>(null)
+    val info = mutableStateOf<String?>(null)
+    val benchmark = mutableStateOf(AssetId("msci-world"))
 
     // diagnóstico
     val dataSummary = mutableStateOf("Leyendo datos guardados…")
@@ -50,8 +62,9 @@ class UiController(val container: AppContainer) {
 
     fun reload() {
         val requested = selected.value
+        val bench = benchmark.value
         container.submit {
-            val d = Presenter.load(container, requested)
+            val d = Presenter.load(container, requested, bench)
             data.value = d
             if (selected.value == null || d.accounts.none { it.id == selected.value }) selected.value = d.selectedId
         }
@@ -94,6 +107,82 @@ class UiController(val container: AppContainer) {
     fun restore(id: AccountId) = operate { it.restore(id, container.today()) }
 
     fun delete(id: AccountId) = operate { it.deletePermanently(id) }
+
+    // ---- operaciones ----
+
+    /** Ejecuta una acción de contratación sobre la cuenta seleccionada y muestra el resultado o el motivo del error. */
+    private fun trade(okText: String, action: (app.brujula.trading.TradingService, AccountId) -> Unit) {
+        val id = selected.value
+        if (id == null) { message.value = "Crea o selecciona una cuenta primero"; return }
+        container.runBackground {
+            try {
+                action(TradingModule.service(container), id)
+                message.value = null
+                info.value = okText
+            } catch (e: Exception) {
+                info.value = null
+                message.value = e.message ?: "No se pudo crear la orden"
+            }
+        }
+    }
+
+    fun placeBuy(asset: AssetId, amount: Money, type: OrderType, price: Money?, expiresOn: LocalDate?) =
+        trade("Orden de compra aceptada: el efectivo queda reservado hasta que se ejecute.") { s, id -> s.placeBuy(id, asset, amount, type, price, expiresOn) }
+
+    fun placeSell(asset: AssetId, units: Units, type: OrderType, price: Money?, expiresOn: LocalDate?) =
+        trade("Orden de venta aceptada: las unidades quedan reservadas hasta que se ejecute.") { s, id -> s.placeSell(id, asset, units, type, price, expiresOn) }
+
+    fun placeTransfer(from: AssetId, to: AssetId, units: Units) =
+        trade("Traspaso aceptado: se ejecutará al valor liquidativo y no tributa hasta el reembolso.") { s, id -> s.placeTransfer(id, from, to, units) }
+
+    fun cancelOrder(orderId: String) =
+        trade("Orden cancelada: la reserva se ha liberado.") { s, id -> s.cancel(id, orderId) }
+
+    private fun withPlans(change: (List<ScheduledPlan>) -> List<ScheduledPlan>, okText: String) {
+        val id = selected.value ?: return
+        container.runBackground {
+            try {
+                val bank = container.awaitBank()
+                bank.setSchedules(id, change(bank.get(id).schedules))
+                message.value = null
+                info.value = okText
+            } catch (e: Exception) {
+                info.value = null
+                message.value = e.message ?: "No se pudo guardar el plan"
+            }
+        }
+    }
+
+    fun addPlan(plan: ScheduledPlan) = withPlans({ it + plan }, "Plan periódico creado.")
+
+    fun removePlan(planId: String) = withPlans({ list -> list.filter { it.id != planId } }, "Plan eliminado.")
+
+    /** Al reanudar un plan no se recuperan las ocurrencias perdidas: empieza de nuevo desde hoy. */
+    fun setPlanPaused(planId: String, paused: Boolean) {
+        val today = container.today()
+        withPlans(
+            { list -> list.map { if (it.id == planId) it.copy(paused = paused, startDate = if (paused) it.startDate else maxOf(it.startDate, today)) else it } },
+            if (paused) "Plan en pausa." else "Plan reanudado desde hoy.",
+        )
+    }
+
+    fun saveTaxSettings(settings: TaxSettings) {
+        val id = selected.value ?: return
+        container.runBackground {
+            try {
+                container.awaitBank().setTaxOptions(id, settings.toOptions())
+                message.value = null
+                info.value = "Opciones fiscales guardadas."
+            } catch (e: Exception) {
+                message.value = e.message ?: "No se pudieron guardar las opciones"
+            }
+        }
+    }
+
+    fun selectBenchmark(id: AssetId) {
+        benchmark.value = id
+        container.notifyChanged()
+    }
 
     // ---- diagnóstico ----
 

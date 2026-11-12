@@ -181,6 +181,8 @@ fun MoreScreen(c: UiController) {
     Column(modifier = Modifier.padding(horizontal = 16.dp).verticalScroll(rememberScrollState())) {
         SectionTitle("Gestión")
         OutlinedButton(onClick = { c.sub.value = SubScreen.Accounts }, modifier = Modifier.fillMaxWidth()) { Text("Cuentas") }
+        OutlinedButton(onClick = { c.sub.value = SubScreen.Stats }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Estadísticas") }
+        OutlinedButton(onClick = { c.sub.value = SubScreen.Tax }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Fiscalidad") }
         OutlinedButton(onClick = { c.refreshDataSummary(); c.sub.value = SubScreen.Diagnostics }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Diagnóstico de datos") }
         SectionTitle("Acerca de")
         Text(

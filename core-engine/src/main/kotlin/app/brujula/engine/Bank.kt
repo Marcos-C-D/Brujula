@@ -19,6 +19,7 @@ class Account internal constructor(
     incomeHistory: List<IncomeConfig>,
     archiveIntervals: List<ArchiveInterval> = emptyList(),
     schedules: List<ScheduledPlan> = emptyList(),
+    taxOptions: Map<String, String> = emptyMap(),
 ) {
     var name: String = name
         internal set
@@ -29,11 +30,13 @@ class Account internal constructor(
 
     var schedules: List<ScheduledPlan> = schedules
         internal set
+    var taxOptions: Map<String, String> = taxOptions
+        internal set
 
     val state: AccountState get() = ledger.state
     val isArchived: Boolean get() = archiveIntervals.lastOrNull()?.to == null && archiveIntervals.isNotEmpty()
 
-    val config: AccountConfig get() = AccountConfig(id, name, createdOn, incomeHistory, archiveIntervals, schedules)
+    val config: AccountConfig get() = AccountConfig(id, name, createdOn, incomeHistory, archiveIntervals, schedules, taxOptions)
 }
 
 /** Conflicto al importar: ya existe una cuenta con el mismo identificador o nombre. */
@@ -112,7 +115,7 @@ class Bank(
         store?.createAccounts(prepared.map { (c, _, r) -> c to r })
         return prepared.map { (c, ledger, _) ->
             ledger.journal = journalFor(c.id)
-            Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals, c.schedules).also { accounts[c.id] = it }
+            Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals, c.schedules, c.taxOptions).also { accounts[c.id] = it }
         }
     }
 
@@ -159,6 +162,14 @@ class Bank(
         if (plans.map { it.id }.toSet().size != plans.size) throw InvalidAccountException("Hay planes con el mismo identificador")
         store?.saveConfig(account.config.copy(schedules = plans))
         account.schedules = plans
+    }
+
+    /** Sustituye las opciones fiscales de la cuenta (se guardan antes de aplicarse). */
+    @Synchronized
+    fun setTaxOptions(id: AccountId, options: Map<String, String>) {
+        val account = get(id)
+        store?.saveConfig(account.config.copy(taxOptions = options))
+        account.taxOptions = options
     }
 
     private fun creditDueIncomes(account: Account, today: LocalDate): List<LedgerRecord> {
@@ -263,7 +274,7 @@ class Bank(
                     throw CorruptStoreException(c.id, listOf(e.message ?: "movimientos no válidos"))
                 }
                 ledger.journal = bank.journalFor(c.id)
-                bank.accounts[c.id] = Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals, c.schedules)
+                bank.accounts[c.id] = Account(c.id, c.name, c.createdOn, ledger, c.incomeHistory, c.archiveIntervals, c.schedules, c.taxOptions)
             }
             return bank
         }

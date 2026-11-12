@@ -1,6 +1,17 @@
 package app.brujula
 
+import app.brujula.app.AccountStats
 import app.brujula.app.AccountValuation
+import app.brujula.app.MovementRow
+import app.brujula.app.OrderRow
+import app.brujula.app.OrderViews
+import app.brujula.app.Stats
+import app.brujula.app.TaxOverview
+import app.brujula.app.TaxViews
+import app.brujula.engine.ScheduledPlan
+import app.brujula.market.AssetKind
+import app.brujula.model.Units
+import app.brujula.tax.TaxSettings
 import app.brujula.app.AssetDetail
 import app.brujula.app.History
 import app.brujula.app.MarketModels
@@ -39,6 +50,14 @@ data class HomeData(
     val history: List<NetWorthPoint> = emptyList(),
     val markets: List<MarketRow> = emptyList(),
     val lastMarketUpdate: Instant? = null,
+    val orders: List<OrderRow> = emptyList(),
+    val movements: List<MovementRow> = emptyList(),
+    val plans: List<ScheduledPlan> = emptyList(),
+    /** Unidades vendibles hoy por activo (liquidadas y no reservadas). */
+    val sellable: Map<AssetId, Units> = emptyMap(),
+    val stats: AccountStats? = null,
+    val benchmarkId: AssetId = AssetId("msci-world"),
+    val tax: TaxOverview? = null,
 )
 
 object Presenter {
@@ -53,7 +72,7 @@ object Presenter {
         }
     }
 
-    fun load(container: AppContainer, requested: AccountId?): HomeData {
+    fun load(container: AppContainer, requested: AccountId?, benchmarkId: AssetId = AssetId("msci-world")): HomeData {
         val bank = container.bank
         if (bank == null) {
             return if (container.startupError != null) HomeData(loading = false, error = container.startupError) else HomeData(loading = true)
@@ -70,10 +89,26 @@ object Presenter {
         val account = selected?.let { bank.get(it.id) }
         val valuation = account?.let { Valuation.of(it.state, today, lookup, catalog) }
         val history = account?.let { History.compute(it.ledger.records, lookup, today) } ?: emptyList()
+
+        val benchSeries = container.marketStore.loadSeries(benchmarkId)?.let { EurView.of(it, container.marketStore) }?.series?.takeIf { !it.isEmpty }
+        val benchmark = benchSeries?.let { (AssetCatalog.byId(benchmarkId)?.name ?: benchmarkId.value) to it }
+        val stats = account?.let { Stats.of(history, it.state, benchmark) }
+        val valuesByKind: Map<AssetKind, Money> = valuation?.rows.orEmpty()
+            .mapNotNull { r -> r.value?.let { v -> AssetCatalog.byId(r.assetId)?.kind?.let { k -> k to v } } }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, list) -> list.fold(Money.ZERO) { a, b -> a + b } }
+        val tax = account?.let {
+            TaxViews.overview(it.ledger.records, today, TaxSettings.fromOptions(it.taxOptions), catalog, valuesByKind)
+        }
+        val sellable = account?.let { acc -> acc.state.positions.associate { p -> p.assetId to acc.state.unitsAvailable(p.assetId, today) } } ?: emptyMap()
         return HomeData(
             loading = false, today = today, accounts = accounts, selectedId = selected?.id, valuation = valuation, history = history,
             markets = MarketModels.rows(AssetCatalog.DEFAULT, container.marketStore, today),
             lastMarketUpdate = container.marketStore.lastSuccessfulUpdate(),
+            orders = account?.let { OrderViews.rows(it.state, catalog) } ?: emptyList(),
+            movements = account?.let { OrderViews.movements(it.ledger.records, catalog) } ?: emptyList(),
+            plans = account?.schedules ?: emptyList(),
+            sellable = sellable, stats = stats, benchmarkId = benchmarkId, tax = tax,
         )
     }
 
