@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.6.0 · Fase 5a · interfaz (Inicio, Cartera, Mercados, Cuentas)
+- Nuevo módulo `core-app` (Kotlin puro, probado): formato es-ES, valoración de cuenta (patrimonio, efectivo disponible, beneficio,
+  reparto por activos y categorías), evolución del patrimonio, estadísticas (rentabilidad ponderada por tiempo y anualizada,
+  comparación con un índice) y modelos de mercado (rentabilidades, riesgo explicado, antigüedad del precio).
+- Interfaz Compose: Inicio, Cartera, Mercados (buscador, categorías, ficha con gráfico y rentabilidades), Cuentas (crear,
+  renombrar, cambiar ingreso mensual, archivar, restaurar, eliminar) y Más (diagnóstico).
+- Una única instancia de datos compartida por la interfaz y la tarea de las 00:00.
+- Si falta el precio de un activo no se inventa: se avisa y su valor no entra en el patrimonio.
+- Pendiente (fase 5b): operaciones y órdenes, estadísticas en pantalla, copias de seguridad, ajustes fiscales y avance de tiempo.
+
 ## 0.5.0 · Fase 4 · fiscalidad española
 - Nuevo módulo `core-tax`: escala del ahorro con vigencia por ejercicio (30 % desde 300.000 €), FIFO fiscal, regla de recompra
   (2 meses ETF, 1 año fondos), integración y compensación (25 %, arrastre 4 años), deducción por doble imposición y resultado

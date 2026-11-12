@@ -20,7 +20,8 @@
 | `core-tax` | Fiscalidad: IRPF, recompra, compensación, calendario y pagos | Hecho (fase 4) |
 | `core-market` | Series, rentabilidades, riesgo, calendarios, divisas, proveedores y actualizador | Hecho (fase 2) |
 | `data-db` | Almacén SQLite nativo (en vez de Room: esquema simple de registro de eventos, menos dependencias) | Hecho (fase 1b) |
-| `app` y `feature-*` | Interfaz | Fase 5 |
+| `core-app` | Modelos de pantalla puros: formato, valoración, historial, estadísticas, mercados | Hecho (fase 5a) |
+| `app` | Interfaz Compose y tareas de Android | 5a hecha; 5b en curso |
 
 ## Reglas aprobadas
 1. **ETF**: órdenes de mercado al precio de apertura de la siguiente sesión. Limitadas: compra si el mínimo

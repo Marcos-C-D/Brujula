@@ -1,6 +1,5 @@
 package app.brujula
 
-import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -9,7 +8,6 @@ import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import app.brujula.data.HttpUrlFetcher
-import app.brujula.data.SqliteMarketStore
 import app.brujula.market.AssetCatalog
 import app.brujula.market.CoinGeckoProvider
 import app.brujula.market.EcbFxProvider
@@ -25,6 +23,7 @@ import app.brujula.market.UpdateOutcome
 import app.brujula.market.UpdateSchedule
 import app.brujula.market.VolatilityResult
 import app.brujula.market.YahooChartProvider
+import android.content.Context
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -43,34 +42,28 @@ object MarketModule {
         )
     }
 
-    /** Actualiza todos los activos y devuelve un informe legible, una línea por activo. */
-    fun updateAndReport(context: Context): List<String> {
-        val store = SqliteMarketStore(context)
-        try {
-            val outcomes = newUpdater(store).updateAll(AssetCatalog.DEFAULT)
-            val lines = outcomes.map { describe(it, store) }.toMutableList()
-            lines += try {
-                val trading = TradingModule.processAll(context)
-                "Órdenes: " + if (trading.isEmpty()) "nada que procesar" else "${trading.size} novedades\n    " + trading.joinToString("\n    ")
-            } catch (e: Exception) {
-                "Órdenes: no se pudieron procesar (${e.message})"
-            }
-            return lines
-        } finally {
-            store.close()
+    /** Actualiza todos los activos y las órdenes, y devuelve un informe legible, una línea por activo. */
+    fun updateAndReport(container: AppContainer): List<String> {
+        val store = container.marketStore
+        val outcomes = newUpdater(store).updateAll(AssetCatalog.DEFAULT)
+        val lines = outcomes.map { describe(it, store) }.toMutableList()
+        lines += try {
+            val trading = TradingModule.processAll(container)
+            "Órdenes: " + if (trading.isEmpty()) "nada que procesar" else "${trading.size} novedades\n    " + trading.joinToString("\n    ")
+        } catch (e: Exception) {
+            "Órdenes: no se pudieron procesar (${e.message})"
         }
+        container.notifyChanged()
+        return lines
     }
 
     /** Si se perdió la ejecución de las 00:00 (móvil apagado o retraso de Android), recupera al abrir la app. */
-    fun catchUpIfNeeded(context: Context) {
-        val store = SqliteMarketStore(context)
-        try {
-            if (UpdateSchedule.needsCatchUp(store.lastSuccessfulUpdate(), Instant.now())) {
-                newUpdater(store).updateAll(AssetCatalog.DEFAULT)
-                try { TradingModule.processAll(context) } catch (e: Exception) { /* se reintentará en la próxima ejecución */ }
-            }
-        } finally {
-            store.close()
+    fun catchUpIfNeeded(container: AppContainer) {
+        val store = container.marketStore
+        if (UpdateSchedule.needsCatchUp(store.lastSuccessfulUpdate(), Instant.now())) {
+            newUpdater(store).updateAll(AssetCatalog.DEFAULT)
+            try { TradingModule.processAll(container) } catch (e: Exception) { /* se reintentará en la próxima ejecución */ }
+            container.notifyChanged()
         }
     }
 
@@ -126,14 +119,13 @@ object UpdateScheduler {
 
 class UpdateWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
     override fun doWork(): Result {
-        val store = SqliteMarketStore(applicationContext)
+        val container = (applicationContext as BrujulaApp).container
         try {
-            MarketModule.newUpdater(store).updateAll(AssetCatalog.DEFAULT)
-            TradingModule.processAll(applicationContext)
+            MarketModule.newUpdater(container.marketStore).updateAll(AssetCatalog.DEFAULT)
+            TradingModule.processAll(container)
+            container.notifyChanged()
         } catch (e: Exception) {
             // Un fallo no debe romper la cadena diaria: se conserva lo guardado y se reintenta mañana.
-        } finally {
-            store.close()
         }
         UpdateScheduler.scheduleNext(applicationContext)
         return Result.success()
