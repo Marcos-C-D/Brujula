@@ -47,7 +47,8 @@ fun StatsScreen(c: UiController) {
             KeyValue("Aportado (saldo inicial + ingresos)", Fmt.eur(s.contributions))
             KeyValue("Rentabilidad total", Fmt.pctOrDash(s.totalReturnPct), signColor(s.totalReturnPct.sign()))
             KeyValue("Ponderada por tiempo", Fmt.pctOrDash(s.twrPct), signColor(s.twrPct.sign()))
-            KeyValue("Anualizada", if (s.annualizedPct != null) Fmt.pct(s.annualizedPct, true) else "— (necesita ≥ 30 días)", signColor(s.annualizedPct.sign()))
+            val annualized = s.annualizedPct
+            KeyValue("Anualizada", if (annualized != null) Fmt.pct(annualized, true) else "— (necesita ≥ 30 días)", signColor(annualized.sign()))
             KeyValue("Días simulados", s.days.toString())
         }
         Text(

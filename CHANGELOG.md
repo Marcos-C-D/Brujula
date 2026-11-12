@@ -1,5 +1,8 @@
 # Cambios
 
+## 0.7.1 · corrección de compilación
+- `StatsAndTaxScreens`: eliminado un smart cast sobre una propiedad de otro módulo que Gradle rechazaba.
+
 ## 0.7.0 · Fase 5b-1 · operaciones, estadísticas y fiscalidad
 - Pestaña **Operaciones**: nueva orden (comprar, vender, traspasar; a mercado, limitada y stop-loss; caducidad), órdenes pendientes con
   cancelación, historial de órdenes con su cronología (solicitada → aceptada → ejecutada → liquidada) e historial de movimientos
