@@ -177,12 +177,38 @@ private fun IncomeDialog(a: AccountItem, dismiss: () -> Unit, confirm: (Money, I
 // ------------------------------------------------------------------ Más
 
 @Composable
-fun MoreScreen(c: UiController) {
+fun MoreScreen(c: UiController, context: Context) {
+    val notificationsOn = remember { mutableStateOf(app.brujula.NotificationHelper.areEnabled(context)) }
+    val permission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {
+        notificationsOn.value = app.brujula.NotificationHelper.areEnabled(context)
+    }
     Column(modifier = Modifier.padding(horizontal = 16.dp).verticalScroll(rememberScrollState())) {
         SectionTitle("Gestión")
         OutlinedButton(onClick = { c.sub.value = SubScreen.Accounts }, modifier = Modifier.fillMaxWidth()) { Text("Cuentas") }
         OutlinedButton(onClick = { c.sub.value = SubScreen.Stats }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Estadísticas") }
         OutlinedButton(onClick = { c.sub.value = SubScreen.Tax }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Fiscalidad") }
+        OutlinedButton(onClick = { c.sub.value = SubScreen.Backup }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Copias de seguridad") }
+        OutlinedButton(onClick = { c.sub.value = SubScreen.TimeTravel }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Avance de tiempo") }
+        SectionTitle("Notificaciones")
+        Text(
+            "Avisos de ingresos mensuales, órdenes ejecutadas, liquidadas, caducadas o rechazadas, dividendos, pagos del IRPF y fechas de impuestos próximas (7 días antes).",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        if (notificationsOn.value) {
+            Text("✔ Notificaciones activadas", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+        } else {
+            Button(
+                onClick = {
+                    if (android.os.Build.VERSION.SDK_INT >= 33) permission.launch("android.permission.POST_NOTIFICATIONS")
+                    val intent = android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    if (android.os.Build.VERSION.SDK_INT < 33) context.startActivity(intent)
+                },
+                modifier = Modifier.padding(top = 8.dp),
+            ) { Text("Activar notificaciones") }
+            Text("Si Android no muestra el permiso, actívalas en Ajustes del sistema › Aplicaciones › Brújula › Notificaciones.", style = MaterialTheme.typography.bodySmall)
+        }
         OutlinedButton(onClick = { c.refreshDataSummary(); c.sub.value = SubScreen.Diagnostics }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Diagnóstico de datos") }
         SectionTitle("Acerca de")
         Text(

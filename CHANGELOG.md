@@ -1,5 +1,18 @@
 # Cambios
 
+## 0.8.0 · Fase 5b-2 · copias de seguridad, avance de tiempo, notificaciones y nuevos activos
+- **Copias de seguridad en la app** (Más › Copias de seguridad): guardar una copia completa en JSON, restaurarla (se valida y audita
+  toda la copia antes de importar; todo o nada) y exportar los movimientos de una cuenta a CSV para Excel.
+- **Avance de tiempo** (Más › Avance de tiempo): simulación sobre una copia en memoria, aislada de los datos reales; avanza 1 día, 1 semana,
+  1 mes o 1 año procesando ingresos, planes, órdenes, liquidaciones, dividendos y calendario del IRPF. Los precios reales solo llegan hasta el
+  último día descargado: más allá, las órdenes esperan.
+- **Notificaciones**: ingresos mensuales, órdenes ejecutadas/liquidadas/caducadas/rechazadas, dividendos, pagos del IRPF y aviso 7 días antes de
+  una fecha de impuestos. Si hay muchas novedades se resumen en una. Requieren el permiso de notificaciones de Android.
+- **Catálogo**: nuevos fondos «MSCI ACWI IMI», «Fondo monetario €STR (EUR, acumulación)» y «Vanguard LifeStrategy 60% Equity (EUR)»;
+  «MSCI Emerging Markets» pasa a llamarse «MSCI Emerging Markets IMI» (mismo identificador, no afecta a tus datos); el ETF de dividendos
+  indica que reparte en efectivo. Los símbolos de proxy nuevos están sin verificar: el diagnóstico indica cuáles responden.
+- 187 pruebas automáticas en el núcleo.
+
 ## 0.7.1 · corrección de compilación
 - `StatsAndTaxScreens`: eliminado un smart cast sobre una propiedad de otro módulo que Gradle rechazaba.
 

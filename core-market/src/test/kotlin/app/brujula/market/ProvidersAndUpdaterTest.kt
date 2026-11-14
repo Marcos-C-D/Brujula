@@ -203,13 +203,21 @@ class ProvidersAndUpdaterTest {
     @Test
     fun elCatalogoNoTieneMarcasYTodosLosActivosPiden()  {
         val marcas = listOf("ishares", "vanguard", "amundi", "xtrackers", "invesco", "vaneck", "fidelity", "spdr")
+        // Excepción pedida expresamente por el usuario: un producto cuyo nombre comercial es el activo en sí.
+        val conMarcaPedida = setOf(AssetId("lifestrategy-60"))
         for (a in AssetCatalog.DEFAULT) {
             val texto = (a.name + a.category + a.referenceIndex + a.proxyNote).lowercase()
-            marcas.forEach { assertTrue(!texto.contains(it), "${a.id}: contiene $it") }
+            if (a.id !in conMarcaPedida) marcas.forEach { assertTrue(!texto.contains(it), "${a.id}: contiene $it") }
             assertTrue(a.sources.isNotEmpty())
             a.marketId?.let { assertTrue(Markets.byId(it) != null, "${a.id}: calendario $it") }
         }
         assertEquals(AssetCatalog.DEFAULT.size, AssetCatalog.DEFAULT.map { it.id }.toSet().size)
         assertTrue(AssetCatalog.DEFAULT.any { it.kind == AssetKind.CRYPTO })
+        // activos pedidos: monetario €STR (fondo, acumulación), ACWI IMI, LifeStrategy 60 y emergentes IMI renombrado
+        val ids = AssetCatalog.DEFAULT.associateBy { it.id.value }
+        assertTrue(ids.getValue("monetario-estr").kind == AssetKind.INDEX_FUND && !ids.getValue("monetario-estr").distributes)
+        assertEquals("MSCI Emerging Markets IMI", ids.getValue("msci-em").name)
+        assertTrue(ids.containsKey("msci-acwi-imi") && ids.containsKey("lifestrategy-60"))
+        assertTrue(ids.getValue("etf-dividendos").distributes) // reparte dividendos en efectivo
     }
 }

@@ -1,6 +1,7 @@
 package app.brujula
 
 import app.brujula.app.AccountStats
+import app.brujula.app.TimeMachine
 import app.brujula.app.AccountValuation
 import app.brujula.app.MovementRow
 import app.brujula.app.OrderRow
@@ -13,6 +14,7 @@ import app.brujula.market.AssetKind
 import app.brujula.model.Units
 import app.brujula.tax.TaxSettings
 import app.brujula.app.AssetDetail
+import app.brujula.app.Fmt
 import app.brujula.app.History
 import app.brujula.app.MarketModels
 import app.brujula.app.MarketRow
@@ -60,10 +62,20 @@ data class HomeData(
     val tax: TaxOverview? = null,
 )
 
+data class SandboxView(
+    val today: LocalDate,
+    val accountName: String,
+    val valuation: AccountValuation,
+    val movements: List<MovementRow>,
+    val taxPostings: List<String>,
+    val pendingOrders: Int,
+    val dataThrough: LocalDate?,
+)
+
 object Presenter {
 
     /** Precios en EUR de los activos, cargados una sola vez por cálculo. */
-    private fun lookupFor(container: AppContainer): PriceLookup {
+    fun lookupFor(container: AppContainer): PriceLookup {
         val cache = HashMap<AssetId, PriceSeries?>()
         return SeriesPriceLookup { id ->
             cache.getOrPut(id) {
@@ -109,6 +121,21 @@ object Presenter {
             movements = account?.let { OrderViews.movements(it.ledger.records, catalog) } ?: emptyList(),
             plans = account?.schedules ?: emptyList(),
             sellable = sellable, stats = stats, benchmarkId = benchmarkId, tax = tax,
+        )
+    }
+
+    /** Resumen de una cuenta dentro del simulador de tiempo. */
+    fun sandboxView(container: AppContainer, tm: TimeMachine, selected: AccountId?): SandboxView? {
+        val acc = tm.bank.all().firstOrNull { it.id == selected } ?: tm.bank.active().firstOrNull() ?: return null
+        val lookup = lookupFor(container)
+        val catalog = { id: AssetId -> AssetCatalog.byId(id) }
+        val dataThrough = AssetCatalog.DEFAULT.mapNotNull { container.marketStore.loadSeries(it.id)?.points?.lastOrNull()?.date }.maxOrNull()
+        return SandboxView(
+            today = tm.today, accountName = acc.name,
+            valuation = Valuation.of(acc.state, tm.today, lookup, catalog),
+            movements = OrderViews.movements(acc.ledger.records, catalog).take(12),
+            taxPostings = acc.state.taxPostings.map { "IRPF ${it.taxYear} (plazo ${it.installment}) · ${Fmt.date(it.date)} · ${Fmt.eur(it.amount)}" },
+            pendingOrders = acc.state.pendingOrders.size, dataThrough = dataThrough,
         )
     }
 

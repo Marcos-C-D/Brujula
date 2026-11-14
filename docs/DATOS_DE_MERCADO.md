@@ -36,3 +36,14 @@ se recupera al abrir la app. El botón manual solo actualiza datos de mercado.
 Los símbolos de proxy del catálogo son candidatos **sin verificar** desde el entorno de desarrollo: el botón de
 diagnóstico indica cuáles responden. Los analizadores de cada proveedor están probados con respuestas de ejemplo,
 no contra los servidores reales.
+
+## Proxies de los activos añadidos (sin verificar desde el entorno de desarrollo)
+| Activo | Proxy principal | Alternativa |
+|---|---|---|
+| MSCI Emerging Markets IMI | `IS3N.DE` | `EMIM.AS` |
+| MSCI ACWI IMI | `SPYY.DE` | `SPYY.L` |
+| Fondo monetario €STR (EUR, acumulación) | `XEON.DE` | `CSH2.PA` |
+| Vanguard LifeStrategy 60% Equity (EUR) | `V60A.DE` | `VNGA60.MI` |
+
+Estos cuatro se tratan como **fondos** (valor liquidativo, traspasos con diferimiento fiscal). Su serie real es la de un ETF equivalente, así que no
+coincide exactamente con el fondo original. «Actualizar precios ahora» indica qué símbolos responden.

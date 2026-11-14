@@ -16,6 +16,7 @@ import java.util.concurrent.Executors
  * las 00:00. Así no puede haber dos copias del libro escribiendo a la vez.
  */
 class AppContainer(private val app: Application) {
+    val context: android.content.Context get() = app
     val bankStore = SqliteBankStore(app)
     val marketStore = SqliteMarketStore(app)
 

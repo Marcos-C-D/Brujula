@@ -8,11 +8,13 @@ app/src/main/java/app/brujula/BrujulaApp.kt
 app/src/main/java/app/brujula/BuildInfo.kt
 app/src/main/java/app/brujula/MainActivity.kt
 app/src/main/java/app/brujula/MarketModule.kt
+app/src/main/java/app/brujula/NotificationHelper.kt
 app/src/main/java/app/brujula/Presenter.kt
 app/src/main/java/app/brujula/PruebaPersistencia.kt
 app/src/main/java/app/brujula/TradingModule.kt
 app/src/main/java/app/brujula/ui/AccountsAndMore.kt
 app/src/main/java/app/brujula/ui/AppRoot.kt
+app/src/main/java/app/brujula/ui/BackupAndTimeScreens.kt
 app/src/main/java/app/brujula/ui/Components.kt
 app/src/main/java/app/brujula/ui/OperationsScreens.kt
 app/src/main/java/app/brujula/ui/Screens.kt
@@ -20,6 +22,7 @@ app/src/main/java/app/brujula/ui/StatsAndTaxScreens.kt
 app/src/main/java/app/brujula/ui/Theme.kt
 app/src/main/java/app/brujula/ui/UiController.kt
 app/src/main/res/drawable/ic_launcher_foreground.xml
+app/src/main/res/drawable/ic_notification.xml
 app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 app/src/main/res/values/colors.xml
 app/src/main/res/values/strings.xml
@@ -29,12 +32,15 @@ core-app/build.gradle.kts
 core-app/src/main/kotlin/app/brujula/app/Fmt.kt
 core-app/src/main/kotlin/app/brujula/app/History.kt
 core-app/src/main/kotlin/app/brujula/app/MarketModels.kt
+core-app/src/main/kotlin/app/brujula/app/Notifications.kt
 core-app/src/main/kotlin/app/brujula/app/Orders.kt
 core-app/src/main/kotlin/app/brujula/app/Pricing.kt
 core-app/src/main/kotlin/app/brujula/app/TaxViews.kt
+core-app/src/main/kotlin/app/brujula/app/TimeMachine.kt
 core-app/src/main/kotlin/app/brujula/app/Valuation.kt
 core-app/src/test/kotlin/app/brujula/app/AppModelsTest.kt
 core-app/src/test/kotlin/app/brujula/app/OrdersAndTaxViewsTest.kt
+core-app/src/test/kotlin/app/brujula/app/TimeMachineAndNotificationsTest.kt
 core-engine/build.gradle.kts
 core-engine/src/main/kotlin/app/brujula/engine/AccountState.kt
 core-engine/src/main/kotlin/app/brujula/engine/Backup.kt

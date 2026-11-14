@@ -83,12 +83,14 @@ private fun Content(c: UiController, context: Context) {
         SubScreen.Diagnostics -> DiagnosticsScreen(c, context)
         SubScreen.Stats -> StatsScreen(c)
         SubScreen.Tax -> TaxScreen(c)
+        SubScreen.Backup -> BackupScreen(c, context)
+        SubScreen.TimeTravel -> TimeTravelScreen(c)
         SubScreen.None -> when (c.tab.value) {
             Tab.HOME -> HomeScreen(d) { c.sub.value = SubScreen.Accounts }
             Tab.PORTFOLIO -> PortfolioScreen(d)
             Tab.MARKETS -> MarketsScreen(d) { c.openAsset(it) }
             Tab.OPERATIONS -> OperationsScreen(c)
-            Tab.MORE -> MoreScreen(c)
+            Tab.MORE -> MoreScreen(c, context)
         }
     }
 }

@@ -47,10 +47,19 @@ object AssetCatalog {
         AssetDefinition(AssetId("msci-world"), "MSCI World", "Fondos indexados", AssetKind.INDEX_FUND, "el índice MSCI World", y("IWDA.AS", "EUNL.DE"), "EURONEXT"),
         AssetDefinition(AssetId("nasdaq-100"), "Nasdaq 100", "Fondos indexados", AssetKind.INDEX_FUND, "el índice Nasdaq 100", y("SXRV.DE", "EQQQ.DE"), "XETRA"),
         AssetDefinition(AssetId("sp500"), "S&P 500", "Fondos indexados", AssetKind.INDEX_FUND, "el índice S&P 500", y("SXR8.DE", "VUAA.DE"), "XETRA"),
-        AssetDefinition(AssetId("msci-em"), "MSCI Emerging Markets", "Fondos indexados", AssetKind.INDEX_FUND, "el índice MSCI Emerging Markets", y("IS3N.DE", "EUNM.DE"), "XETRA"),
+        AssetDefinition(AssetId("msci-em"), "MSCI Emerging Markets IMI", "Fondos indexados", AssetKind.INDEX_FUND, "el índice MSCI Emerging Markets IMI", y("IS3N.DE", "EMIM.AS"), "XETRA"),
         AssetDefinition(AssetId("msci-europe"), "MSCI Europe", "Fondos indexados", AssetKind.INDEX_FUND, "el índice MSCI Europe", y("IMEU.AS", "MEUD.PA"), "EURONEXT"),
         AssetDefinition(AssetId("msci-acwi"), "MSCI ACWI", "Fondos indexados", AssetKind.INDEX_FUND, "el índice MSCI ACWI", y("IUSQ.DE", "SSAC.L"), "XETRA"),
         AssetDefinition(AssetId("msci-world-small-cap"), "MSCI World Small Cap", "Fondos indexados", AssetKind.INDEX_FUND, "el índice MSCI World Small Cap", y("IUSN.DE", "WSML.L"), "XETRA"),
+        AssetDefinition(AssetId("msci-acwi-imi"), "MSCI ACWI IMI", "Fondos indexados", AssetKind.INDEX_FUND, "el índice MSCI ACWI IMI", y("SPYY.DE", "SPYY.L"), "XETRA"),
+        AssetDefinition(
+            AssetId("monetario-estr"), "Fondo monetario €STR (EUR, acumulación)", "Fondos monetarios", AssetKind.INDEX_FUND,
+            "el tipo de interés a un día del euro (€STR)", y("XEON.DE", "CSH2.PA"), "XETRA",
+        ),
+        AssetDefinition(
+            AssetId("lifestrategy-60"), "Vanguard LifeStrategy 60% Equity (EUR)", "Fondos mixtos", AssetKind.INDEX_FUND,
+            "una cartera global de 60 % renta variable y 40 % renta fija", y("V60A.DE", "VNGA60.MI"), "XETRA",
+        ),
 
         AssetDefinition(AssetId("etf-semiconductores"), "Semiconductores", "ETF", AssetKind.ETF, "el sector de semiconductores", y("VVSM.DE"), "XETRA"),
         AssetDefinition(AssetId("etf-defensa"), "Defensa", "ETF", AssetKind.ETF, "el sector de defensa", y("DFEN.DE"), "XETRA"),
@@ -60,7 +69,7 @@ object AssetCatalog {
         AssetDefinition(AssetId("etf-tecnologia"), "Tecnología", "ETF", AssetKind.ETF, "el sector tecnológico", y("QDVE.DE", "IUIT.L"), "XETRA"),
         AssetDefinition(AssetId("etf-emergentes"), "Mercados emergentes (ETF)", "ETF", AssetKind.ETF, "los mercados emergentes", y("EMIM.AS", "EIMI.L"), "EURONEXT"),
         AssetDefinition(AssetId("etf-bonos"), "Bonos", "ETF", AssetKind.ETF, "la renta fija agregada", y("IEAG.AS", "EUNA.DE"), "EURONEXT"),
-        AssetDefinition(AssetId("etf-dividendos"), "Dividendos", "ETF", AssetKind.ETF, "las acciones con altos dividendos", y("EXSH.DE", "VHYL.AS"), "XETRA", distributes = true),
+        AssetDefinition(AssetId("etf-dividendos"), "Dividendos (reparte en efectivo)", "ETF", AssetKind.ETF, "las acciones con altos dividendos (distribución: cobras los dividendos y no se reinvierten)", y("EXSH.DE", "VHYL.AS"), "XETRA", distributes = true),
 
         AssetDefinition(
             AssetId("bitcoin"), "Bitcoin", "Criptomonedas", AssetKind.CRYPTO, "Bitcoin",
