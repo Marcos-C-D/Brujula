@@ -4,6 +4,9 @@ import app.brujula.app.Notifications
 import app.brujula.app.TaxViews
 import app.brujula.model.AssetId
 import app.brujula.market.AssetCatalog
+import app.brujula.market.AssetDefinition
+import app.brujula.model.Money
+import app.brujula.trading.Quote
 import app.brujula.market.EurView
 import app.brujula.market.UpdateSchedule
 import app.brujula.tax.DividendDeclaration
@@ -37,9 +40,30 @@ object TradingModule {
         }
     }
 
+    /**
+     * Última cotización disponible para ejecutar al instante una orden a mercado de ETF: se refresca el activo (petición rápida)
+     * y se usa su último precio (cotización con retraso si el mercado está abierto; si no, el último cierre). Sin conexión se usa lo
+     * guardado si tiene como mucho 5 días; si no hay nada reciente devuelve null y la orden queda pendiente.
+     */
+    private fun latestQuote(container: AppContainer, def: AssetDefinition): Quote? {
+        val store = container.marketStore
+        try {
+            MarketModule.newUpdater(store, fast = true).updateAsset(def)
+        } catch (e: Exception) {
+            // sin conexión: se intenta con lo guardado
+        }
+        val series = store.loadSeries(def.id)?.let { EurView.of(it, store) }?.series?.takeIf { !it.isEmpty } ?: return null
+        val last = series.last
+        if (java.time.temporal.ChronoUnit.DAYS.between(last.date, container.today()) > 5) return null
+        return Quote(Money.of(last.close), last.date)
+    }
+
     /** Servicio de contratación con los precios guardados (en EUR). */
     fun service(container: AppContainer, afterDay: ((AccountId, java.time.LocalDate) -> List<String>)? = null): TradingService =
-        TradingService(container.awaitBank(), { AssetCatalog.byId(it) }, priceSource(container), clock = { Instant.now() }, afterDay = afterDay)
+        TradingService(
+            container.awaitBank(), { AssetCatalog.byId(it) }, priceSource(container), clock = { Instant.now() },
+            immediateQuote = { def -> latestQuote(container, def) }, afterDay = afterDay,
+        )
 
     fun processAll(container: AppContainer): List<String> {
         val bank = container.awaitBank()

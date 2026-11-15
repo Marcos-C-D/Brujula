@@ -13,7 +13,9 @@ Todo queda en el libro de movimientos (`OrderPlaced`, `Purchase`/`Sale`/`FundTra
 ## Reglas de ejecución (datos diarios, del lado conservador)
 | Caso | Regla |
 |---|---|
-| ETF y Bitcoin | Se ejecutan en la primera sesión **posterior** al día de creación; a mercado, al precio de apertura |
+| ETF a mercado | **Inmediata**: al último precio disponible (cotización con retraso si el mercado está abierto; si no, el último cierre) |
+| Bitcoin a mercado | En la primera sesión **posterior** al día de creación, al precio de apertura |
+| ETF y Bitcoin limitadas / stop-loss | Se evalúan con los precios de cada sesión posterior a la creación |
 | Limitada de compra | A la apertura si ya está por debajo del límite; si no, al límite solo si el mínimo baja **estrictamente** del límite |
 | Limitada de venta | Simétrica con el máximo |
 | Stop-loss (venta) | Se activa si el mínimo llega al precio de activación (rozarlo basta); a la apertura si abre por debajo |
@@ -21,7 +23,7 @@ Todo queda en el libro de movimientos (`OrderPlaced`, `Purchase`/`Sale`/`FundTra
 | Caducidad | Válida hasta la fecha indicada (inclusive); «hasta cancelar» si no hay fecha |
 | Falta de dato | Las órdenes esperan; nunca se ejecutan con precios de otra fecha ni retroactivamente |
 
-Con datos diarios no hay hora de apertura por mercado, por eso una orden nunca se ejecuta el mismo día en que se crea (ETF).
+Con datos diarios no hay hora de apertura por mercado, por eso las órdenes que se evalúan con sesiones nunca se ejecutan el mismo día en que se crean. Los planes periódicos usan la regla de la siguiente sesión.
 
 ## Liquidación
 - ETF: EE. UU. T+1 desde el 28-05-2024; Europa (Xetra, Euronext, Londres) T+2 hasta el 10-10-2027 y T+1 desde el 11-10-2027.

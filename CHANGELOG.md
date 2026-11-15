@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.8.1 · compra inmediata de ETF
+- Las órdenes **a mercado de ETF** (compra y venta) se ejecutan de inmediato al último precio disponible: la app refresca ese activo con una
+  petición rápida y usa la cotización con retraso (mercado abierto) o el último cierre. El efectivo se descuenta al instante y la liquidación
+  sigue siendo T+2. Sin conexión se usa lo guardado si tiene como mucho 5 días; si no, la orden queda pendiente y se ejecuta en la siguiente sesión.
+- Sin cambios para limitadas, stop-loss, fondos, Bitcoin y planes periódicos.
+
 ## 0.8.0 · Fase 5b-2 · copias de seguridad, avance de tiempo, notificaciones y nuevos activos
 - **Copias de seguridad en la app** (Más › Copias de seguridad): guardar una copia completa en JSON, restaurarla (se valida y audita
   toda la copia antes de importar; todo o nada) y exportar los movimientos de una cuenta a CSV para Excel.

@@ -34,13 +34,13 @@ private val CATALOG = listOf(
     AssetDefinition(BTC, "Bitcoin", "Cripto", AssetKind.CRYPTO, "btc", emptyList(), null),
 ).associateBy { it.id }
 
-private class Env(config: TradingConfig = TradingConfig(), opening: String = "10000.00", income: String = "0.00") {
+private class Env(config: TradingConfig = TradingConfig(), opening: String = "10000.00", income: String = "0.00", quote: ((AssetDefinition) -> Quote?)? = null) {
     // lunes 9-nov-2026, 10:00 en Madrid
     var now: Instant = Instant.parse("2026-11-09T09:00:00Z")
     val bank = Bank(Bank.sequentialIds())
     val series = HashMap<AssetId, PriceSeries>()
     private var n = 0
-    val service = TradingService(bank, { CATALOG[it] }, { series[it] }, config, { now }, { "o${++n}" })
+    val service = TradingService(bank, { CATALOG[it] }, { series[it] }, config, { now }, { "o${++n}" }, quote)
     val acc = bank.createAccount("Cuenta", m(opening), m(income), 10, d("2026-11-02"))
     val id: AccountId get() = acc.id
     val state: AccountState get() = acc.state
@@ -76,6 +76,41 @@ class TradingTest {
         assertEquals(emptyList(), e.audit())
         val pasos = OrderTimeline.of(o).map { it.label.substringBefore(" a ") }
         assertEquals(listOf("Orden solicitada", "Orden aceptada", "Orden ejecutada", "Operación liquidada"), pasos)
+    }
+
+    @Test
+    fun etfALMercadoSeEjecutaDeInmediatoYElRestoDeOrdenesNo() {
+        val e = Env(quote = { d -> if (d.id == ETF) Quote(m("10.00"), d("2026-11-09")) else null })
+        e.prices(ETF, flat("2026-11-09", "10"), flat("2026-11-10", "10"), flat("2026-11-11", "10"))
+        val compra = e.service.placeBuy(e.id, ETF, m("100.00"))
+        assertEquals(OrderStatus.EXECUTED, e.order(compra).status) // en el mismo momento
+        assertEquals(d("2026-11-09"), e.order(compra).executedOn)
+        assertEquals(m("10.00"), e.order(compra).executionPrice)
+        assertEquals(m("9900.00"), e.state.cash)
+        assertEquals(u("10"), e.state.unitsHeld(ETF))
+        assertEquals(m("0"), e.state.reservedCash)
+        e.run("2026-11-11")
+        assertEquals(d("2026-11-11"), e.order(compra).settledOn) // sigue liquidando en T+2
+
+        e.at("2026-11-11T10:00:00Z") // el reloj nunca va por detrás del libro
+        val venta = e.service.placeSell(e.id, ETF, u("10"))
+        assertEquals(OrderStatus.EXECUTED, e.order(venta).status)
+        assertEquals(m("100.00"), e.state.unsettledCash(d("2026-11-11"))) // el efectivo de la venta se libera en T+2 (13-nov)
+        assertEquals(m("0"), e.state.unsettledCash(d("2026-11-13")))
+
+        // una limitada NO es inmediata: sigue la regla de las sesiones
+        val limitada = e.service.placeBuy(e.id, ETF, m("50.00"), OrderType.LIMIT, m("5.00"))
+        assertEquals(OrderStatus.ACCEPTED, e.order(limitada).status)
+    }
+
+    @Test
+    fun sinCotizacionRecienteLaOrdenQuedaPendienteComoAntes() {
+        val e = Env(quote = { null })
+        e.prices(ETF, flat("2026-11-09", "10"), flat("2026-11-10", "10"))
+        val id = e.service.placeBuy(e.id, ETF, m("100.00"))
+        assertEquals(OrderStatus.ACCEPTED, e.order(id).status)
+        e.run("2026-11-10")
+        assertEquals(d("2026-11-10"), e.order(id).executedOn) // siguiente sesión
     }
 
     @Test

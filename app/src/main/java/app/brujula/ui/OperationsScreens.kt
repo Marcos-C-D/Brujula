@@ -108,6 +108,7 @@ private fun NewOrderSection(c: UiController, d: HomeData) {
     val funds = d.sellable.filter { it.value.isPositive && kinds[it.key] == AssetKind.INDEX_FUND }.map { (names[it.key] ?: it.key.value) to it.key }
     val destinations = AssetCatalog.DEFAULT.filter { it.kind == AssetKind.INDEX_FUND && it.id != asset.value }.map { it.name to it.id }
     val isFund = asset.value?.let { kinds[it] == AssetKind.INDEX_FUND } ?: false
+    val isEtf = asset.value?.let { kinds[it] == AssetKind.ETF } ?: false
 
     LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
         item {
@@ -167,6 +168,7 @@ private fun NewOrderSection(c: UiController, d: HomeData) {
                 when {
                     side.value == OrderSide.TRANSFER -> "El traspaso se ejecuta al valor liquidativo de ambos fondos y conserva el coste y la fecha de adquisición: no tributa hasta el reembolso."
                     isFund -> "Los fondos se ejecutan al valor liquidativo: el mismo día hábil si la orden se crea antes de las 14:00 (hora de Madrid); si no, el siguiente."
+                    isEtf && type.value == OrderType.MARKET -> "A mercado: se ejecuta de inmediato al último precio disponible (cotización con retraso si el mercado está abierto; si está cerrado, el último cierre). El efectivo se descuenta al instante y la operación se liquida en T+2."
                     type.value == OrderType.MARKET -> "A mercado: se ejecuta en la siguiente sesión posterior a hoy, al precio de apertura."
                     type.value == OrderType.LIMIT -> "Limitada: solo se ejecuta si el precio supera el límite (rozarlo no basta)."
                     else -> "Stop-loss: se activa si el mínimo de la sesión llega al precio indicado."
@@ -201,7 +203,7 @@ private fun NewOrderSection(c: UiController, d: HomeData) {
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             ) { Text("Enviar orden") }
             Text(
-                "Las órdenes se procesan cada día a las 00:00 (hora de Madrid) con los precios ya publicados, o al pulsar «Actualizar precios ahora» en Más › Diagnóstico.",
+                "Los ETF a mercado se ejecutan al instante. Las demás órdenes (limitadas, stop-loss, fondos y Bitcoin) y los planes periódicos se procesan cada día a las 00:00 (hora de Madrid) con los precios ya publicados, o al pulsar «Actualizar precios ahora» en Más › Diagnóstico.",
                 style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 12.dp),
             )
         }

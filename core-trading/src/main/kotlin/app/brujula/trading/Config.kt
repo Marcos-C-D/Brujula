@@ -15,6 +15,9 @@ import java.time.LocalTime
 
 class TradingException(message: String) : RuntimeException(message)
 
+/** Último precio disponible de un activo, en EUR, y la fecha a la que corresponde (cotización con retraso o último cierre). */
+data class Quote(val price: Money, val date: LocalDate)
+
 /** Precios en EUR por activo (la capa de datos convierte divisas antes). */
 fun interface PriceSource {
     fun series(assetId: AssetId): PriceSeries?

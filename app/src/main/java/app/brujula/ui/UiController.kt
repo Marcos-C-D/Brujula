@@ -23,6 +23,7 @@ import android.net.Uri
 import app.brujula.TradingModule
 import app.brujula.engine.Frequency
 import app.brujula.engine.OrderSide
+import app.brujula.engine.OrderStatus
 import app.brujula.engine.OrderType
 import app.brujula.engine.ScheduledPlan
 import app.brujula.model.Money
@@ -130,14 +131,17 @@ class UiController(val container: AppContainer) {
     // ---- operaciones ----
 
     /** Ejecuta una acción de contratación sobre la cuenta seleccionada y muestra el resultado o el motivo del error. */
-    private fun trade(okText: String, action: (app.brujula.trading.TradingService, AccountId) -> Unit) {
+    private fun trade(pendingText: String, executedText: String?, action: (app.brujula.trading.TradingService, AccountId) -> String?) {
         val id = selected.value
         if (id == null) { message.value = "Crea o selecciona una cuenta primero"; return }
         container.runBackground {
             try {
-                action(TradingModule.service(container), id)
+                val orderId = action(TradingModule.service(container), id)
                 message.value = null
-                info.value = okText
+                val order = orderId?.let { container.awaitBank().get(id).state.order(it) }
+                val done = order != null && (order.status == OrderStatus.EXECUTED || order.status == OrderStatus.SETTLED)
+                val price = order?.executionPrice?.let { Fmt.price(it) } ?: ""
+                info.value = if (done && executedText != null) "$executedText a $price." else pendingText
             } catch (e: Exception) {
                 info.value = null
                 message.value = e.message ?: "No se pudo crear la orden"
@@ -146,16 +150,16 @@ class UiController(val container: AppContainer) {
     }
 
     fun placeBuy(asset: AssetId, amount: Money, type: OrderType, price: Money?, expiresOn: LocalDate?) =
-        trade("Orden de compra aceptada: el efectivo queda reservado hasta que se ejecute.") { s, id -> s.placeBuy(id, asset, amount, type, price, expiresOn) }
+        trade("Orden de compra aceptada: el efectivo queda reservado hasta que se ejecute.", "Compra ejecutada de inmediato") { s, id -> s.placeBuy(id, asset, amount, type, price, expiresOn) }
 
     fun placeSell(asset: AssetId, units: Units, type: OrderType, price: Money?, expiresOn: LocalDate?) =
-        trade("Orden de venta aceptada: las unidades quedan reservadas hasta que se ejecute.") { s, id -> s.placeSell(id, asset, units, type, price, expiresOn) }
+        trade("Orden de venta aceptada: las unidades quedan reservadas hasta que se ejecute.", "Venta ejecutada de inmediato") { s, id -> s.placeSell(id, asset, units, type, price, expiresOn) }
 
     fun placeTransfer(from: AssetId, to: AssetId, units: Units) =
-        trade("Traspaso aceptado: se ejecutará al valor liquidativo y no tributa hasta el reembolso.") { s, id -> s.placeTransfer(id, from, to, units) }
+        trade("Traspaso aceptado: se ejecutará al valor liquidativo y no tributa hasta el reembolso.", null) { s, id -> s.placeTransfer(id, from, to, units) }
 
     fun cancelOrder(orderId: String) =
-        trade("Orden cancelada: la reserva se ha liberado.") { s, id -> s.cancel(id, orderId) }
+        trade("Orden cancelada: la reserva se ha liberado.", null) { s, id -> s.cancel(id, orderId); null }
 
     private fun withPlans(change: (List<ScheduledPlan>) -> List<ScheduledPlan>, okText: String) {
         val id = selected.value ?: return

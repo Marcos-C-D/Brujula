@@ -24,7 +24,7 @@
 | `app` | Interfaz Compose y tareas de Android | 5a hecha; 5b en curso |
 
 ## Reglas aprobadas
-1. **ETF**: órdenes de mercado al precio de apertura de la siguiente sesión. Limitadas: compra si el mínimo
+1. **ETF**: órdenes de mercado **inmediatas** al último precio disponible (cambio posterior a la aprobación inicial, pedido por el usuario). Limitadas: compra si el mínimo
    de la sesión baja del límite, venta si el máximo lo supera, ejecución al límite (o a la apertura si ya lo
    mejora). Si solo lo toca exactamente, no se ejecuta.
 2. **Fondos**: valor liquidativo = cierre del proxy del día de valoración aplicable según la hora de corte; nunca

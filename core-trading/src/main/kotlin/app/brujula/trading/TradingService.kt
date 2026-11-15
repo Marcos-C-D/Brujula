@@ -52,6 +52,12 @@ class TradingService(
     private val config: TradingConfig = TradingConfig(),
     private val clock: () -> Instant,
     private val newOrderId: () -> String = { UUID.randomUUID().toString() },
+    /**
+     * Cotización inmediata. Si se indica, las órdenes A MERCADO de ETF se ejecutan en el acto al último precio disponible
+     * (cotización con retraso o último cierre). Si devuelve null (sin precio reciente), la orden queda pendiente y se ejecuta
+     * en la siguiente sesión como siempre. Las limitadas, los stop-loss, los fondos y Bitcoin no cambian.
+     */
+    private val immediateQuote: ((AssetDefinition) -> Quote?)? = null,
     /** Se ejecuta al final de cada día procesado (por ejemplo, los hechos fiscales). Devuelve líneas de informe. */
     private val afterDay: ((AccountId, LocalDate) -> List<String>)? = null,
 ) {
@@ -73,7 +79,9 @@ class TradingService(
             OrderSide.BUY, type, assetId, amount = amount, limitPrice = limitPrice, expiresOn = expiresOn,
             fees = config.fees.fee(d.kind, OrderSide.BUY, amount), placedAt = clock(),
         )
-        return place(accountId, spec)
+        val id = place(accountId, spec)
+        if (d.kind == AssetKind.ETF && type == OrderType.MARKET) tryImmediate(accountId, id)
+        return id
     }
 
     fun placeSell(
@@ -83,7 +91,21 @@ class TradingService(
         val d = def(assetId)
         checkTypeAllowed(d, type)
         checkExpiry(expiresOn)
-        return place(accountId, OrderSpec(OrderSide.SELL, type, assetId, units = units, limitPrice = price, expiresOn = expiresOn, placedAt = clock()))
+        val id = place(accountId, OrderSpec(OrderSide.SELL, type, assetId, units = units, limitPrice = price, expiresOn = expiresOn, placedAt = clock()))
+        if (d.kind == AssetKind.ETF && type == OrderType.MARKET) tryImmediate(accountId, id)
+        return id
+    }
+
+    /** Ejecuta en el acto una orden a mercado de ETF con la última cotización disponible (si la hay). */
+    private fun tryImmediate(accountId: AccountId, orderId: String) {
+        val quoteOf = immediateQuote ?: return
+        val order = bank.get(accountId).state.order(orderId) ?: return
+        if (order.status != OrderStatus.ACCEPTED) return
+        val d = def(order.spec.assetId)
+        val quote = quoteOf(d) ?: return
+        val sink = ArrayList<String>()
+        if (order.spec.side == OrderSide.BUY) executeBuy(accountId, order, d, today(), quote.price, sink)
+        else executeSell(accountId, order, d, today(), quote.price, sink)
     }
 
     /** Traspaso entre fondos con diferimiento fiscal. Los ETF y Bitcoin no pueden traspasarse. */

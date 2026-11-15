@@ -31,14 +31,15 @@ import java.util.concurrent.TimeUnit
 /** Montaje de la capa de datos de mercado para Android. */
 object MarketModule {
 
-    fun newUpdater(store: MarketStore): MarketUpdater {
-        val http = HttpUrlFetcher()
+    /** [fast]: tiempos de espera cortos y sin pausas, para refrescar un solo activo al enviar una orden. */
+    fun newUpdater(store: MarketStore, fast: Boolean = false): MarketUpdater {
+        val http = if (fast) HttpUrlFetcher(connectTimeoutMs = 4_000, readTimeoutMs = 6_000) else HttpUrlFetcher()
         return MarketUpdater(
             store = store,
             providers = mapOf(ProviderId.YAHOO to YahooChartProvider(http), ProviderId.COINGECKO to CoinGeckoProvider(http)),
             ecb = EcbFxProvider(http),
             clock = { Instant.now() },
-            pause = { Thread.sleep(400) }, // se espacian las peticiones para respetar los límites gratuitos
+            pause = { if (!fast) Thread.sleep(400) }, // se espacian las peticiones para respetar los límites gratuitos
         )
     }
 
