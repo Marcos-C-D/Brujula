@@ -14,7 +14,7 @@ Todo queda en el libro de movimientos (`OrderPlaced`, `Purchase`/`Sale`/`FundTra
 | Caso | Regla |
 |---|---|
 | ETF a mercado | **Inmediata**: al último precio disponible (cotización con retraso si el mercado está abierto; si no, el último cierre) |
-| Bitcoin a mercado | En la primera sesión **posterior** al día de creación, al precio de apertura |
+| Bitcoin a mercado | **Inmediata**: al precio actual (cotización con retraso, 24 h) |
 | ETF y Bitcoin limitadas / stop-loss | Se evalúan con los precios de cada sesión posterior a la creación |
 | Limitada de compra | A la apertura si ya está por debajo del límite; si no, al límite solo si el mínimo baja **estrictamente** del límite |
 | Limitada de venta | Simétrica con el máximo |

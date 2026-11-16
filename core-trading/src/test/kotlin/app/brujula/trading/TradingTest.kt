@@ -104,6 +104,18 @@ class TradingTest {
     }
 
     @Test
+    fun bitcoinALMercadoTambienSeEjecutaDeInmediato() {
+        val e = Env(quote = { d -> if (d.id == BTC) Quote(m("90000"), d("2026-11-09")) else null })
+        val id = e.service.placeBuy(e.id, BTC, m("900.00"))
+        assertEquals(OrderStatus.EXECUTED, e.order(id).status)
+        assertEquals(u("0.01"), e.state.unitsHeld(BTC))
+        assertEquals(m("9100.00"), e.state.cash)
+        // los fondos no son inmediatos aunque haya cotización
+        val fondo = e.service.placeBuy(e.id, FA, m("100.00"))
+        assertEquals(OrderStatus.ACCEPTED, e.order(fondo).status)
+    }
+
+    @Test
     fun sinCotizacionRecienteLaOrdenQuedaPendienteComoAntes() {
         val e = Env(quote = { null })
         e.prices(ETF, flat("2026-11-09", "10"), flat("2026-11-10", "10"))

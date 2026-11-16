@@ -109,6 +109,7 @@ private fun NewOrderSection(c: UiController, d: HomeData) {
     val destinations = AssetCatalog.DEFAULT.filter { it.kind == AssetKind.INDEX_FUND && it.id != asset.value }.map { it.name to it.id }
     val isFund = asset.value?.let { kinds[it] == AssetKind.INDEX_FUND } ?: false
     val isEtf = asset.value?.let { kinds[it] == AssetKind.ETF } ?: false
+    val isCrypto = asset.value?.let { kinds[it] == AssetKind.CRYPTO } ?: false
 
     LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
         item {
@@ -168,6 +169,7 @@ private fun NewOrderSection(c: UiController, d: HomeData) {
                 when {
                     side.value == OrderSide.TRANSFER -> "El traspaso se ejecuta al valor liquidativo de ambos fondos y conserva el coste y la fecha de adquisición: no tributa hasta el reembolso."
                     isFund -> "Los fondos se ejecutan al valor liquidativo: el mismo día hábil si la orden se crea antes de las 14:00 (hora de Madrid); si no, el siguiente."
+                    isCrypto && type.value == OrderType.MARKET -> "A mercado: se ejecuta de inmediato al precio actual de Bitcoin (cotización con retraso, 24 horas al día). El efectivo se descuenta al instante y la operación se liquida en el acto."
                     isEtf && type.value == OrderType.MARKET -> "A mercado: se ejecuta de inmediato al último precio disponible (cotización con retraso si el mercado está abierto; si está cerrado, el último cierre). El efectivo se descuenta al instante y la operación se liquida en T+2."
                     type.value == OrderType.MARKET -> "A mercado: se ejecuta en la siguiente sesión posterior a hoy, al precio de apertura."
                     type.value == OrderType.LIMIT -> "Limitada: solo se ejecuta si el precio supera el límite (rozarlo no basta)."
@@ -203,7 +205,7 @@ private fun NewOrderSection(c: UiController, d: HomeData) {
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             ) { Text("Enviar orden") }
             Text(
-                "Los ETF a mercado se ejecutan al instante. Las demás órdenes (limitadas, stop-loss, fondos y Bitcoin) y los planes periódicos se procesan cada día a las 00:00 (hora de Madrid) con los precios ya publicados, o al pulsar «Actualizar precios ahora» en Más › Diagnóstico.",
+                "Los ETF y Bitcoin a mercado se ejecutan al instante. Las demás órdenes (limitadas, stop-loss y fondos) y los planes periódicos se procesan cada día a las 00:00 (hora de Madrid) con los precios ya publicados, o al pulsar «Actualizar precios ahora» en Más › Diagnóstico.",
                 style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 12.dp),
             )
         }

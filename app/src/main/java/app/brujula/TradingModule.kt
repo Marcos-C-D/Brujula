@@ -41,7 +41,7 @@ object TradingModule {
     }
 
     /**
-     * Última cotización disponible para ejecutar al instante una orden a mercado de ETF: se refresca el activo (petición rápida)
+     * Última cotización disponible para ejecutar al instante una orden a mercado de ETF o Bitcoin: se refresca el activo (petición rápida)
      * y se usa su último precio (cotización con retraso si el mercado está abierto; si no, el último cierre). Sin conexión se usa lo
      * guardado si tiene como mucho 5 días; si no hay nada reciente devuelve null y la orden queda pendiente.
      */

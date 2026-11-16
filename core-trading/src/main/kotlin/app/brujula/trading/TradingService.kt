@@ -53,9 +53,9 @@ class TradingService(
     private val clock: () -> Instant,
     private val newOrderId: () -> String = { UUID.randomUUID().toString() },
     /**
-     * Cotización inmediata. Si se indica, las órdenes A MERCADO de ETF se ejecutan en el acto al último precio disponible
+     * Cotización inmediata. Si se indica, las órdenes A MERCADO de ETF y de Bitcoin se ejecutan en el acto al último precio disponible
      * (cotización con retraso o último cierre). Si devuelve null (sin precio reciente), la orden queda pendiente y se ejecuta
-     * en la siguiente sesión como siempre. Las limitadas, los stop-loss, los fondos y Bitcoin no cambian.
+     * en la siguiente sesión como siempre. Las limitadas, los stop-loss y los fondos no cambian.
      */
     private val immediateQuote: ((AssetDefinition) -> Quote?)? = null,
     /** Se ejecuta al final de cada día procesado (por ejemplo, los hechos fiscales). Devuelve líneas de informe. */
@@ -80,7 +80,7 @@ class TradingService(
             fees = config.fees.fee(d.kind, OrderSide.BUY, amount), placedAt = clock(),
         )
         val id = place(accountId, spec)
-        if (d.kind == AssetKind.ETF && type == OrderType.MARKET) tryImmediate(accountId, id)
+        if ((d.kind == AssetKind.ETF || d.kind == AssetKind.CRYPTO) && type == OrderType.MARKET) tryImmediate(accountId, id)
         return id
     }
 
@@ -92,11 +92,11 @@ class TradingService(
         checkTypeAllowed(d, type)
         checkExpiry(expiresOn)
         val id = place(accountId, OrderSpec(OrderSide.SELL, type, assetId, units = units, limitPrice = price, expiresOn = expiresOn, placedAt = clock()))
-        if (d.kind == AssetKind.ETF && type == OrderType.MARKET) tryImmediate(accountId, id)
+        if ((d.kind == AssetKind.ETF || d.kind == AssetKind.CRYPTO) && type == OrderType.MARKET) tryImmediate(accountId, id)
         return id
     }
 
-    /** Ejecuta en el acto una orden a mercado de ETF con la última cotización disponible (si la hay). */
+    /** Ejecuta en el acto una orden a mercado de ETF o Bitcoin con la última cotización disponible (si la hay). */
     private fun tryImmediate(accountId: AccountId, orderId: String) {
         val quoteOf = immediateQuote ?: return
         val order = bank.get(accountId).state.order(orderId) ?: return

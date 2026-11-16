@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.8.2 · compra inmediata de Bitcoin
+- Las órdenes **a mercado de Bitcoin** (compra y venta) también se ejecutan de inmediato al precio actual (cotización con retraso, 24 h), con
+  liquidación en el acto. Limitadas, stop-loss, fondos y planes periódicos no cambian.
+
 ## 0.8.1 · compra inmediata de ETF
 - Las órdenes **a mercado de ETF** (compra y venta) se ejecutan de inmediato al último precio disponible: la app refresca ese activo con una
   petición rápida y usa la cotización con retraso (mercado abierto) o el último cierre. El efectivo se descuenta al instante y la liquidación
