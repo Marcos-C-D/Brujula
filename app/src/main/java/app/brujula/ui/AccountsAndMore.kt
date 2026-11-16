@@ -183,6 +183,8 @@ fun MoreScreen(c: UiController, context: Context) {
         notificationsOn.value = app.brujula.NotificationHelper.areEnabled(context)
     }
     Column(modifier = Modifier.padding(horizontal = 16.dp).verticalScroll(rememberScrollState())) {
+        SectionTitle("Aprende")
+        Button(onClick = { c.sub.value = SubScreen.Learn }, modifier = Modifier.fillMaxWidth()) { Text("Cómo funciona todo (guía)") }
         SectionTitle("Gestión")
         OutlinedButton(onClick = { c.sub.value = SubScreen.Accounts }, modifier = Modifier.fillMaxWidth()) { Text("Cuentas") }
         OutlinedButton(onClick = { c.sub.value = SubScreen.Stats }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Estadísticas") }

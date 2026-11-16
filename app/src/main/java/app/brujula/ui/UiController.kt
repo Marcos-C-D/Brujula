@@ -47,6 +47,8 @@ sealed class SubScreen {
     object Tax : SubScreen()
     object Backup : SubScreen()
     object TimeTravel : SubScreen()
+    object Learn : SubScreen()
+    data class Topic(val id: String) : SubScreen()
 }
 
 fun formatInstant(i: Instant?): String =
@@ -93,6 +95,11 @@ class UiController(val container: AppContainer) {
         detail.value = null
         sub.value = SubScreen.Asset(id)
         container.submit { detail.value = Presenter.assetDetail(container, id) }
+    }
+
+    /** Atrás: de un tema educativo vuelve a la lista; desde cualquier otra pantalla secundaria, a la principal. */
+    fun back() {
+        sub.value = if (sub.value is SubScreen.Topic) SubScreen.Learn else SubScreen.None
     }
 
     fun select(id: AccountId) {

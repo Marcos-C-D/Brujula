@@ -2,5 +2,5 @@ package app.brujula
 
 /** Versión visible en la app (debe coincidir con versionName de build.gradle.kts). */
 object BuildInfo {
-    const val VERSION = "0.8.2"
+    const val VERSION = "0.9.0"
 }

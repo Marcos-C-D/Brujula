@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 fun AppRoot(c: UiController, context: Context) {
     // Cada cambio de datos vuelve a calcular las pantallas fuera del hilo principal.
     LaunchedEffect(c.container.version.value) { c.reload() }
-    BackHandler(enabled = c.sub.value !is SubScreen.None) { c.sub.value = SubScreen.None }
+    BackHandler(enabled = c.sub.value !is SubScreen.None) { c.back() }
 
     val d = c.data.value
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -85,6 +85,8 @@ private fun Content(c: UiController, context: Context) {
         SubScreen.Tax -> TaxScreen(c)
         SubScreen.Backup -> BackupScreen(c, context)
         SubScreen.TimeTravel -> TimeTravelScreen(c)
+        SubScreen.Learn -> LearnScreen(c)
+        is SubScreen.Topic -> TopicScreen(s.id)
         SubScreen.None -> when (c.tab.value) {
             Tab.HOME -> HomeScreen(d) { c.sub.value = SubScreen.Accounts }
             Tab.PORTFOLIO -> PortfolioScreen(d)
@@ -117,7 +119,7 @@ private fun Header(c: UiController) {
         horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
     ) {
         if (sub !is SubScreen.None) {
-            TextButton(onClick = { c.sub.value = SubScreen.None }) { Text("← Atrás") }
+            TextButton(onClick = { c.back() }) { Text("← Atrás") }
         } else {
             Text("Brújula", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
         }

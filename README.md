@@ -7,11 +7,13 @@ Es una **simulación educativa**: no ejecuta operaciones reales ni constituye as
 - Todo se guarda en local; Internet solo se usa para actualizar precios.
 - Se compila en GitHub Actions (no hace falta Android Studio).
 
+## Documentación
+`docs/DOCUMENTACION_TECNICA.md` (cómo está hecho y cómo modificarlo), `docs/ARQUITECTURA.md`, `docs/NUCLEO_FINANCIERO.md`, `docs/DATOS_DE_MERCADO.md`,
+`docs/CONTRATACION.md`, `docs/FISCALIDAD.md` y `docs/CONFIGURACION.md`. Dentro de la app: **Más › Cómo funciona todo (guía)**.
+
 ## Estado
 
-**Fase 0 · esqueleto de compilación.** La app solo muestra una pantalla inicial.
-Sirve para validar el ciclo completo: ZIP → script → push → Actions → APK.
-Ver [`CHANGELOG.md`](CHANGELOG.md) y [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md).
+**Fase 6 · funcionalidades completas.** Fondos, ETF y Bitcoin con datos reales con retraso, órdenes, liquidaciones, traspasos, fiscalidad española, estadísticas, copias de seguridad, avance de tiempo, notificaciones y guía educativa.
 
 ## Estructura
 

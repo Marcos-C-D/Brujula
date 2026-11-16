@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.9.0 · Fase 6 · guía educativa y documentación técnica
+- **Guía dentro de la app** (Más › Cómo funciona todo): 14 temas con ejemplos numéricos (fondos, ETF, Bitcoin, diferencias, órdenes, liquidaciones, precios,
+  rentabilidad y riesgo, precio medio y FIFO, impuestos en España, traspasos, estadísticas y limitaciones). Los ejemplos están comprobados contra el motor.
+- Botón «Atrás» que vuelve del tema a la lista.
+- Documentación técnica (`docs/DOCUMENTACION_TECNICA.md`) y README actualizados.
+
 ## 0.8.2 · compra inmediata de Bitcoin
 - Las órdenes **a mercado de Bitcoin** (compra y venta) también se ejecutan de inmediato al precio actual (cotización con retraso, 24 h), con
   liquidación en el acto. Limitadas, stop-loss, fondos y planes periódicos no cambian.

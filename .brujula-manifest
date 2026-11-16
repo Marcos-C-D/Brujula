@@ -16,6 +16,7 @@ app/src/main/java/app/brujula/ui/AccountsAndMore.kt
 app/src/main/java/app/brujula/ui/AppRoot.kt
 app/src/main/java/app/brujula/ui/BackupAndTimeScreens.kt
 app/src/main/java/app/brujula/ui/Components.kt
+app/src/main/java/app/brujula/ui/LearnScreens.kt
 app/src/main/java/app/brujula/ui/OperationsScreens.kt
 app/src/main/java/app/brujula/ui/Screens.kt
 app/src/main/java/app/brujula/ui/StatsAndTaxScreens.kt
@@ -29,6 +30,7 @@ app/src/main/res/values/strings.xml
 app/src/main/res/values/themes.xml
 build.gradle.kts
 core-app/build.gradle.kts
+core-app/src/main/kotlin/app/brujula/app/Education.kt
 core-app/src/main/kotlin/app/brujula/app/Fmt.kt
 core-app/src/main/kotlin/app/brujula/app/History.kt
 core-app/src/main/kotlin/app/brujula/app/MarketModels.kt
@@ -39,6 +41,7 @@ core-app/src/main/kotlin/app/brujula/app/TaxViews.kt
 core-app/src/main/kotlin/app/brujula/app/TimeMachine.kt
 core-app/src/main/kotlin/app/brujula/app/Valuation.kt
 core-app/src/test/kotlin/app/brujula/app/AppModelsTest.kt
+core-app/src/test/kotlin/app/brujula/app/EducationTest.kt
 core-app/src/test/kotlin/app/brujula/app/OrdersAndTaxViewsTest.kt
 core-app/src/test/kotlin/app/brujula/app/TimeMachineAndNotificationsTest.kt
 core-engine/build.gradle.kts
@@ -101,6 +104,7 @@ docs/ARQUITECTURA.md
 docs/CONFIGURACION.md
 docs/CONTRATACION.md
 docs/DATOS_DE_MERCADO.md
+docs/DOCUMENTACION_TECNICA.md
 docs/FISCALIDAD.md
 docs/NUCLEO_FINANCIERO.md
 gradle.properties
