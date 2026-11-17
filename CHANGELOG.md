@@ -1,5 +1,11 @@
 # Cambios
 
+## 1.0.0 · versión final
+- Cierre del desarrollo según el plan: fondos indexados, ETF y Bitcoin con precios reales con retraso, cuentas independientes, órdenes (mercado, limitada,
+  stop-loss, planes periódicos), reservas, liquidaciones, traspasos, fiscalidad española, estadísticas, copias de seguridad, avance de tiempo,
+  notificaciones, guía educativa y documentación técnica.
+- 193 pruebas automáticas del núcleo; la interfaz se verifica con la compilación de GitHub Actions y en el móvil.
+
 ## 0.9.0 · Fase 6 · guía educativa y documentación técnica
 - **Guía dentro de la app** (Más › Cómo funciona todo): 14 temas con ejemplos numéricos (fondos, ETF, Bitcoin, diferencias, órdenes, liquidaciones, precios,
   rentabilidad y riesgo, precio medio y FIFO, impuestos en España, traspasos, estadísticas y limitaciones). Los ejemplos están comprobados contra el motor.

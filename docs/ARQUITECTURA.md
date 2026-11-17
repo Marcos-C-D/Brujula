@@ -33,16 +33,22 @@
 4. **Regla de recompra**: dos meses para valores cotizados, un año para el resto; se contrastará con la LIRPF.
 5. Nombre: Brújula.
 
-## Fases
+## Fases (todas completadas)
 | Fase | Contenido |
 |---|---|
-| 0 | Esqueleto, CI, script de subida, documentación |
-| 1 | Núcleo financiero con tests: dinero, libro, cuentas, ingresos, FIFO, independencia |
-| 2 | Datos de mercado, calendarios, divisas, rentabilidades, volatilidad, diagnóstico |
-| 3 | Órdenes, reservas, liquidaciones, traspasos, limitadas, stop-loss, programadas |
-| 4 | Fiscalidad y calendario fiscal |
-| 5 | Interfaz completa, notificaciones, copias de seguridad, avance de tiempo |
-| 6 | Sección educativa, documentación técnica, ZIP final |
+| 0 | Esqueleto, CI, firma fija, script de subida, documentación |
+| 1 | Núcleo financiero: dinero, libro, cuentas, ingresos, FIFO, persistencia, copias de seguridad |
+| 2 | Datos de mercado, calendarios, divisas, rentabilidades, riesgo, diagnóstico |
+| 3 | Órdenes, reservas, liquidaciones, traspasos, planes periódicos |
+| 4 | Fiscalidad española y calendario fiscal |
+| 5 | Interfaz, estadísticas, copias en la app, avance de tiempo, notificaciones |
+| 6 | Guía educativa y documentación técnica |
+
+## Ideas para el futuro
+- Widgets de Android (segunda fase acordada).
+- Pantalla para configurar comisiones por cuenta (la estructura `FeeSchedule` ya existe).
+- Fechas oficiales de campaña de futuros ejercicios cuando se publiquen, y nuevas escalas del ahorro si cambian.
+- Verificar y ajustar los símbolos de los proxies que el diagnóstico marque con ✘.
 
 ## Verificación
 Las pruebas se ejecutan en GitHub Actions (el workflow falla si alguna prueba o la compilación falla).
