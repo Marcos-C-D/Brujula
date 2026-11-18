@@ -38,7 +38,7 @@ object Education {
                 EduSection("Cómo lo simula Brújula", listOf(
                     "Los fondos reales no tienen una serie de precios gratuita, así que Brújula usa como proxy un ETF que replica el mismo índice. Es una aproximación: no coincide exactamente con el fondo real.",
                     "Si creas la orden antes de las 14:00 (hora de Madrid) de un día hábil, se valora ese mismo día; si no, el siguiente día hábil. Nunca ves el valor liquidativo antes de crear la orden.",
-                    "Plazos por defecto (en días hábiles): compra 2, reembolso 3 y traspaso 4. Las participaciones compradas no se pueden vender hasta que se liquidan.",
+                    "Cada compra, reembolso o traspaso de un fondo (indexado, monetario o mixto) tarda entre 1 y 2 días hábiles del mercado abierto en liquidarse, a elegir al azar en cada operación. Las participaciones compradas no se pueden vender hasta que se liquidan.",
                 )),
                 EduSection("Traspasos", listOf(
                     "Solo los fondos permiten traspasar el dinero a otro fondo sin pagar impuestos en ese momento: la ganancia se «arrastra» y tributa cuando reembolsas.",
@@ -80,7 +80,7 @@ object Education {
                 EduSection("Resumen", listOf(
                     "Precio: fondo = valor liquidativo diario; ETF = cotización en bolsa; Bitcoin = cotización continua.",
                     "Ejecución a mercado: fondo = al valor liquidativo del día de valoración; ETF y Bitcoin = inmediata.",
-                    "Liquidación: fondo = 2 días (compra) y 3 (reembolso); ETF = T+2 en Europa (T+1 desde octubre de 2027) y T+1 en EE. UU.; Bitcoin = inmediata.",
+                    "Liquidación: fondo = 1 o 2 días hábiles al azar; ETF = T+2 en Europa (T+1 desde octubre de 2027) y T+1 en EE. UU.; Bitcoin = inmediata.",
                     "Traspasos con diferimiento fiscal: solo los fondos.",
                     "Tipos de orden: los fondos solo admiten órdenes a mercado; ETF y Bitcoin admiten también limitadas y stop-loss.",
                     "Fiscalidad al vender: los tres generan ganancia o pérdida patrimonial en la base del ahorro; los dividendos cobrados de ETF de distribución son rendimientos del capital mobiliario.",
@@ -98,6 +98,9 @@ object Education {
                 )),
                 EduSection("Reservas", listOf(
                     "Al aceptar una compra pendiente se reserva el efectivo (importe más comisión); al aceptar una venta o un traspaso se reservan las unidades. Así no se puede gastar dos veces el mismo dinero. Cancelar, caducar o rechazar libera la reserva.",
+                )),
+                EduSection("Ingresar dinero", listOf(
+                    "Puedes añadir efectivo a una cuenta en cualquier momento (Inicio › Añadir dinero, o Más › Cuentas › Ingresar). Está disponible al instante y cuenta como aportación, igual que el saldo inicial y los ingresos mensuales: no distorsiona tu rentabilidad.",
                 )),
                 EduSection("Estados", listOf(
                     "Solicitada y aceptada → ejecutada → liquidada. Una orden también puede quedar cancelada, caducada o rechazada. Puedes ver la cronología de cada orden en Operaciones › Historial.",
@@ -190,7 +193,7 @@ object Education {
                     "En un traspaso vendes participaciones de un fondo y compras otro en el mismo movimiento. Al no pasar por tu cuenta, no tributa en ese momento.",
                     "Se conservan el coste y la fecha de adquisición de cada lote: cuando reembolses, el FIFO usará la fecha original.",
                     "Ejemplo: tienes 1.000 € de coste en el fondo A, valen 1.320 € y los traspasas al fondo B. No pagas nada. En el fondo B tu coste sigue siendo 1.000 €: la ganancia de 320 € tributará cuando reembolses.",
-                    "Durante los 4 días hábiles del traspaso, las participaciones del fondo de destino no se pueden vender.",
+                    "Durante el traspaso (1 o 2 días hábiles al azar), las participaciones del fondo de destino no se pueden vender.",
                 )),
             ),
         ),

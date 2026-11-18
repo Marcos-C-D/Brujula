@@ -2,6 +2,7 @@ package app.brujula.app
 
 import app.brujula.engine.AccountState
 import app.brujula.engine.CashAdjustment
+import app.brujula.engine.CashDeposit
 import app.brujula.engine.DividendReceived
 import app.brujula.engine.FundTransfer
 import app.brujula.engine.LedgerRecord
@@ -100,6 +101,7 @@ object OrderViews {
 
     private fun describe(e: app.brujula.engine.LedgerEvent, catalog: (AssetId) -> AssetDefinition?): Pair<String, String> = when (e) {
         is OpeningBalance -> "Apertura" to "Saldo inicial"
+        is CashDeposit -> "Depósito" to "Ingreso de efectivo: ${Fmt.eur(e.amount)}"
         is MonthlyIncome -> "Ingreso" to "Ingreso mensual ${e.period}"
         is Purchase -> "Compra" to "${name(e.assetId, catalog)}: ${Fmt.units(e.units)} u. por ${Fmt.eur(e.invested)}" + if (e.fees.isPositive) " (+${Fmt.eur(e.fees)} de comisión)" else ""
         is Sale -> "Venta" to "${name(e.assetId, catalog)}: ${Fmt.units(e.units)} u. por ${Fmt.eur(e.grossProceeds)}" + if (e.fees.isPositive) " (−${Fmt.eur(e.fees)} de comisión)" else ""

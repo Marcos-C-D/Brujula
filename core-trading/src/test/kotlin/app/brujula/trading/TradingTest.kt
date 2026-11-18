@@ -34,7 +34,7 @@ private val CATALOG = listOf(
     AssetDefinition(BTC, "Bitcoin", "Cripto", AssetKind.CRYPTO, "btc", emptyList(), null),
 ).associateBy { it.id }
 
-private class Env(config: TradingConfig = TradingConfig(), opening: String = "10000.00", income: String = "0.00", quote: ((AssetDefinition) -> Quote?)? = null) {
+private class Env(config: TradingConfig = TradingConfig(settlement = SettlementRules(fundRandomDays = null)), opening: String = "10000.00", income: String = "0.00", quote: ((AssetDefinition) -> Quote?)? = null) {
     // lunes 9-nov-2026, 10:00 en Madrid
     var now: Instant = Instant.parse("2026-11-09T09:00:00Z")
     val bank = Bank(Bank.sequentialIds())
@@ -389,7 +389,7 @@ class TradingTest {
 
     @Test
     fun losPlazosDeLiquidacionTienenVigenciaYRespetanFestivos() {
-        val r = SettlementRules()
+        val r = SettlementRules(fundRandomDays = null)
         val xetra = CATALOG.getValue(ETF)
         assertEquals(d("2026-11-11"), r.settlementDate(xetra, OrderSide.BUY, d("2026-11-09"))) // T+2
         assertEquals(d("2027-10-12"), r.settlementDate(xetra, OrderSide.BUY, d("2027-10-11"))) // T+1 desde el 11-10-2027
@@ -402,6 +402,19 @@ class TradingTest {
         assertEquals(d("2026-11-11"), r.settlementDate(fa, OrderSide.BUY, d("2026-11-09")))
         assertEquals(d("2026-11-12"), r.settlementDate(fa, OrderSide.SELL, d("2026-11-09")))
         assertEquals(d("2026-11-13"), r.settlementDate(fa, OrderSide.TRANSFER, d("2026-11-09")))
+    }
+
+    @Test
+    fun losFondosTardanAlAzarEntreUnoYDosDiasHabilesConElMercadoAbierto() {
+        val r = SettlementRules(random = java.util.Random(7))
+        val fondo = CATALOG.getValue(FA) // EURONEXT
+        val fechas = (1..200).map { r.settlementDate(fondo, OrderSide.BUY, d("2026-11-09")) }.toSet()
+        assertEquals(setOf(d("2026-11-10"), d("2026-11-11")), fechas) // 1 o 2 días hábiles, y salen las dos
+        // con festivos: jueves 2-abr-2026 (Viernes Santo y Lunes de Pascua cerrados) -> martes 7 o miércoles 8
+        val santos = (1..200).map { r.settlementDate(fondo, OrderSide.SELL, d("2026-04-02")) }.toSet()
+        assertEquals(setOf(d("2026-04-07"), d("2026-04-08")), santos)
+        // los ETF no cambian: siguen en T+2
+        assertEquals(d("2026-11-11"), r.settlementDate(CATALOG.getValue(ETF), OrderSide.BUY, d("2026-11-09")))
     }
 
     @Test

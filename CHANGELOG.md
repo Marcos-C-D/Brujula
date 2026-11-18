@@ -1,5 +1,13 @@
 # Cambios
 
+## 1.1.0 · ingreso de efectivo y plazos aleatorios de fondos
+- **Añadir dinero**: botón en Inicio y «Ingresar» en Más › Cuentas. El efectivo está disponible al instante y cuenta como **aportación** (como el saldo
+  inicial y los ingresos mensuales): no distorsiona la rentabilidad ponderada por tiempo. Nuevo movimiento «Depósito» en el libro, el historial,
+  las copias de seguridad y el CSV.
+- **Fondos** (indexados, monetarios y mixtos): cada compra, reembolso o traspaso tarda **1 o 2 días hábiles al azar** con el mercado abierto (respeta
+  festivos) en lugar de 2/3/4 días fijos. El plazo elegido queda guardado en el movimiento, así que el historial es reproducible. Los ETF no cambian.
+- 195 pruebas automáticas del núcleo.
+
 ## 1.0.0 · versión final
 - Cierre del desarrollo según el plan: fondos indexados, ETF y Bitcoin con precios reales con retraso, cuentas independientes, órdenes (mercado, limitada,
   stop-loss, planes periódicos), reservas, liquidaciones, traspasos, fiscalidad española, estadísticas, copias de seguridad, avance de tiempo,

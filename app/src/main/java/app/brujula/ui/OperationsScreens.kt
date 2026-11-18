@@ -167,8 +167,8 @@ private fun NewOrderSection(c: UiController, d: HomeData) {
             }
             Text(
                 when {
-                    side.value == OrderSide.TRANSFER -> "El traspaso se ejecuta al valor liquidativo de ambos fondos y conserva el coste y la fecha de adquisición: no tributa hasta el reembolso."
-                    isFund -> "Los fondos se ejecutan al valor liquidativo: el mismo día hábil si la orden se crea antes de las 14:00 (hora de Madrid); si no, el siguiente."
+                    side.value == OrderSide.TRANSFER -> "El traspaso se ejecuta al valor liquidativo de ambos fondos y tarda 1 o 2 días hábiles (al azar) en liquidarse. Conserva el coste y la fecha de adquisición: no tributa hasta el reembolso."
+                    isFund -> "Los fondos se ejecutan al valor liquidativo: el mismo día hábil si la orden se crea antes de las 14:00 (hora de Madrid); si no, el siguiente. Después tardan 1 o 2 días hábiles (al azar) en liquidarse."
                     isCrypto && type.value == OrderType.MARKET -> "A mercado: se ejecuta de inmediato al precio actual de Bitcoin (cotización con retraso, 24 horas al día). El efectivo se descuenta al instante y la operación se liquida en el acto."
                     isEtf && type.value == OrderType.MARKET -> "A mercado: se ejecuta de inmediato al último precio disponible (cotización con retraso si el mercado está abierto; si está cerrado, el último cierre). El efectivo se descuenta al instante y la operación se liquida en T+2."
                     type.value == OrderType.MARKET -> "A mercado: se ejecuta en la siguiente sesión posterior a hoy, al precio de apertura."

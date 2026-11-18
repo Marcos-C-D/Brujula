@@ -234,3 +234,18 @@ data class TaxSettlement(
         amount.requireCents("La liquidación fiscal")
     }
 }
+
+/**
+ * Ingreso manual de efectivo, disponible al instante. Cuenta como APORTACIÓN (como el saldo inicial y los ingresos mensuales),
+ * no como rendimiento: no distorsiona la rentabilidad.
+ */
+data class CashDeposit(
+    override val date: LocalDate,
+    val amount: Money,
+    override val note: String = "Ingreso de efectivo",
+) : LedgerEvent {
+    init {
+        if (!amount.isPositive) throw InvalidEntryException("El ingreso debe ser positivo")
+        amount.requireCents("El ingreso")
+    }
+}

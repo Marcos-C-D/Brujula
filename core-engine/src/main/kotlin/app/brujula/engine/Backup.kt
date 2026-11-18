@@ -83,6 +83,7 @@ object CsvExporter {
             val e = r.event
             val row: List<String> = when (e) {
                 is OpeningBalance -> { balance += e.amount; listOf("APERTURA", "", "", cash(e.amount), "", cash(balance), text(e.note)) }
+                is CashDeposit -> { balance += e.amount; listOf("DEPOSITO", "", "", cash(e.amount), "", cash(balance), text(e.note)) }
                 is MonthlyIncome -> { balance += e.amount; listOf("INGRESO", "", "", cash(e.amount), "", cash(balance), text(e.note)) }
                 is Purchase -> { balance -= e.totalCost; listOf("COMPRA", text(e.assetId.value), e.units.toString(), cash(-e.totalCost), cash(e.fees), cash(balance), text(e.note)) }
                 is Sale -> { balance += e.netProceeds; listOf("VENTA", text(e.assetId.value), e.units.toString(), cash(e.netProceeds), cash(e.fees), cash(balance), text(e.note)) }

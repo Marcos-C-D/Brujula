@@ -34,6 +34,7 @@ import app.brujula.model.Money
 private sealed class Dialog {
     object Create : Dialog()
     data class Rename(val a: AccountItem) : Dialog()
+    data class Deposit(val a: AccountItem) : Dialog()
     data class Income(val a: AccountItem) : Dialog()
     data class Delete(val a: AccountItem) : Dialog()
 }
@@ -62,7 +63,8 @@ fun AccountsScreen(c: UiController) {
                             Text(if (a.id == selectedId) "● Seleccionada" else "Seleccionar")
                         }
                         TextButton(onClick = { dialog.value = Dialog.Rename(a) }) { Text("Renombrar") }
-                        TextButton(onClick = { dialog.value = Dialog.Income(a) }) { Text("Ingreso") }
+                        TextButton(onClick = { dialog.value = Dialog.Deposit(a) }) { Text("Ingresar") }
+                        TextButton(onClick = { dialog.value = Dialog.Income(a) }) { Text("Mensual") }
                     }
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -82,6 +84,7 @@ fun AccountsScreen(c: UiController) {
         null -> Unit
         Dialog.Create -> CreateAccountDialog({ dialog.value = null }) { name, open, inc, day -> c.createAccount(name, open, inc, day); dialog.value = null }
         is Dialog.Rename -> TextDialog("Renombrar cuenta", "Nombre", dlg.a.name, { dialog.value = null }) { c.rename(dlg.a.id, it); dialog.value = null }
+        is Dialog.Deposit -> DepositDialog(dlg.a.name, { dialog.value = null }) { m -> c.deposit(dlg.a.id, m); dialog.value = null }
         is Dialog.Income -> IncomeDialog(dlg.a, { dialog.value = null }) { amount, day -> c.changeIncome(dlg.a.id, amount, day); dialog.value = null }
         is Dialog.Delete -> AlertDialog(
             onDismissRequest = { dialog.value = null },
@@ -91,6 +94,37 @@ fun AccountsScreen(c: UiController) {
             dismissButton = { TextButton(onClick = { dialog.value = null }) { Text("Cancelar") } },
         )
     }
+}
+
+/** Diálogo para ingresar efectivo en una cuenta. Se usa desde Inicio y desde Cuentas. */
+@Composable
+fun DepositDialog(accountName: String, dismiss: () -> Unit, confirm: (Money) -> Unit) {
+    val amount = remember { mutableStateOf("") }
+    val error = remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = dismiss,
+        title = { Text("Añadir dinero a $accountName") },
+        text = {
+            Column {
+                Text(
+                    "El dinero está disponible al instante. Cuenta como aportación (igual que el saldo inicial y los ingresos mensuales): no cambia tu rentabilidad.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                OutlinedTextField(
+                    value = amount.value, onValueChange = { amount.value = it }, label = { Text("Importe (€)") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                )
+                error.value?.let { Notice(it) }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val m = Fmt.parseMoney(amount.value)
+                if (m == null || !m.isPositive || !m.isWholeCents) error.value = "Escribe un importe positivo (máx. 2 decimales)" else confirm(m)
+            }) { Text("Ingresar") }
+        },
+        dismissButton = { TextButton(onClick = dismiss) { Text("Cancelar") } },
+    )
 }
 
 @Composable

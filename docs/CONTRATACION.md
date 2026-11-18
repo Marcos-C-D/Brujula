@@ -27,7 +27,7 @@ Con datos diarios no hay hora de apertura por mercado, por eso las órdenes que 
 
 ## Liquidación
 - ETF: EE. UU. T+1 desde el 28-05-2024; Europa (Xetra, Euronext, Londres) T+2 hasta el 10-10-2027 y T+1 desde el 11-10-2027.
-- Fondos: compra 2, reembolso 3 y traspaso 4 días hábiles (configurables). Las participaciones compradas no se pueden vender
+- Fondos (indexados, monetarios y mixtos): cada compra, reembolso o traspaso tarda **1 o 2 días hábiles al azar** del mercado abierto (el plazo elegido queda guardado en el movimiento; hay plazos fijos configurables en `SettlementRules`). Las participaciones compradas no se pueden vender
   hasta liquidar; el importe de un reembolso no está disponible hasta su fecha.
 - Bitcoin: inmediata. Los días hábiles respetan los calendarios de cada mercado (festivos incluidos).
 

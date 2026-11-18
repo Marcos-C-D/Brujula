@@ -17,6 +17,7 @@ object EventCodec {
 
     fun toMap(e: LedgerEvent): Map<String, Any?> = when (e) {
         is OpeningBalance -> linkedMapOf("type" to "OPENING", "date" to e.date.toString(), "amount" to e.amount.toString(), "note" to e.note)
+        is CashDeposit -> linkedMapOf("type" to "DEPOSIT", "date" to e.date.toString(), "amount" to e.amount.toString(), "note" to e.note)
         is MonthlyIncome -> linkedMapOf("type" to "INCOME", "date" to e.date.toString(), "period" to e.period.toString(), "amount" to e.amount.toString(), "note" to e.note)
         is Purchase -> linkedMapOf<String, Any?>(
             "type" to "PURCHASE", "date" to e.date.toString(), "asset" to e.assetId.value,
@@ -102,6 +103,7 @@ object EventCodec {
         try {
             return when (val type = text(m, "type")) {
                 "OPENING" -> OpeningBalance(date(m, "date"), money(m, "amount"), optText(m, "note") ?: "Saldo inicial")
+                "DEPOSIT" -> CashDeposit(date(m, "date"), money(m, "amount"), optText(m, "note") ?: "Ingreso de efectivo")
                 "INCOME" -> MonthlyIncome(date(m, "date"), period(m, "period"), money(m, "amount"), optText(m, "note") ?: "Ingreso mensual")
                 "PURCHASE" -> Purchase(
                     date(m, "date"), AssetId(text(m, "asset")), money(m, "invested"), units(m, "units"), money(m, "fees"), optText(m, "note") ?: "",

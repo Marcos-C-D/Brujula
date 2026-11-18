@@ -37,6 +37,7 @@ object LedgerAuditor {
             when (val e = r.event) {
                 is OpeningBalance -> { cash += e.amount; contributions += e.amount }
                 is MonthlyIncome -> { cash += e.amount; contributions += e.amount }
+                is CashDeposit -> { cash += e.amount; contributions += e.amount }
                 is Purchase -> {
                     cash -= e.totalCost
                     bought.merge(e.assetId, e.units) { a, b -> a + b }

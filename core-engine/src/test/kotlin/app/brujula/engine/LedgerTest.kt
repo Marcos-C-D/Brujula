@@ -179,4 +179,17 @@ class LedgerTest {
         assertEquals(listOf(1L, 2L), l.records.map { it.seq })
         assertEquals(2L, l.state.lotsByAsset.getValue(ASSET_A).single().acquisitionSeq)
     }
+
+    @Test
+    fun elIngresoManualSumaEfectivoYAportacionesYViajaEnLaCopia() {
+        val l = ledger("1000.00")
+        l.post(CashDeposit(d("2026-01-05"), m("250.50")))
+        assertEquals(m("1250.50"), l.state.cash)
+        assertEquals(m("1250.50"), l.state.contributions) // es una aportación, no un rendimiento
+        assertEquals(emptyList(), LedgerAuditor.audit(l.records))
+        val dep = l.records.last().event
+        assertEquals(dep, EventCodec.fromJson(EventCodec.toJson(dep)))
+        assertFailsWith<InvalidEntryException> { CashDeposit(d("2026-01-05"), m("0")) }
+        assertFailsWith<InvalidEntryException> { CashDeposit(d("2026-01-05"), m("1.005")) }
+    }
 }

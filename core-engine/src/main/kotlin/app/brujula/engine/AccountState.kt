@@ -116,6 +116,8 @@ data class AccountState(
         return when (event) {
             is OpeningBalance -> base.copy(cash = cash + event.amount, contributions = contributions + event.amount)
 
+            is CashDeposit -> base.copy(cash = cash + event.amount, contributions = contributions + event.amount)
+
             is MonthlyIncome -> {
                 if (event.period in creditedPeriods) throw DuplicateIncomePeriodException(event.period)
                 base.copy(

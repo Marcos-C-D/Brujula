@@ -49,6 +49,13 @@ class SettlementRules(
     val fundRedeemDays: Int = 3,
     val fundTransferDays: Int = 4,
     private val etfRules: List<LagRule> = DEFAULT_ETF_RULES,
+    /**
+     * Si no es null, cada compra, reembolso o traspaso de FONDOS (indexados, monetarios y mixtos) tarda un número aleatorio de días
+     * hábiles dentro de este rango (con el mercado abierto). El plazo elegido queda guardado en el movimiento. Con null se usan los
+     * plazos fijos [fundBuyDays], [fundRedeemDays] y [fundTransferDays].
+     */
+    val fundRandomDays: IntRange? = 1..2,
+    private val random: java.util.Random = java.util.Random(),
 ) {
     fun etfLagDays(marketId: String?, tradeDate: LocalDate): Int =
         etfRules.filter { it.marketId == marketId && !it.from.isAfter(tradeDate) }.maxByOrNull { it.from }?.days ?: 2
@@ -58,10 +65,14 @@ class SettlementRules(
         val days = when (def.kind) {
             AssetKind.CRYPTO -> return tradeDate
             AssetKind.ETF -> etfLagDays(def.marketId, tradeDate)
-            AssetKind.INDEX_FUND -> when (side) {
-                OrderSide.BUY -> fundBuyDays
-                OrderSide.SELL -> fundRedeemDays
-                OrderSide.TRANSFER -> fundTransferDays
+            AssetKind.INDEX_FUND -> {
+                val range = fundRandomDays
+                if (range != null) range.first + random.nextInt(range.last - range.first + 1)
+                else when (side) {
+                    OrderSide.BUY -> fundBuyDays
+                    OrderSide.SELL -> fundRedeemDays
+                    OrderSide.TRANSFER -> fundTransferDays
+                }
             }
         }
         return calendar?.addTradingDays(tradeDate, days) ?: addWeekdays(tradeDate, days)

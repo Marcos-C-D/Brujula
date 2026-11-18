@@ -22,6 +22,7 @@ import app.brujula.market.AssetCatalog
 import android.net.Uri
 import app.brujula.TradingModule
 import app.brujula.engine.Frequency
+import app.brujula.engine.CashDeposit
 import app.brujula.engine.OrderSide
 import app.brujula.engine.OrderStatus
 import app.brujula.engine.OrderType
@@ -123,6 +124,12 @@ class UiController(val container: AppContainer) {
     fun createAccount(name: String, opening: Money, income: Money, day: Int) = operate { bank ->
         val acc = bank.createAccount(name, opening, income, day, container.today())
         selected.value = acc.id
+    }
+
+    /** Ingreso inmediato de efectivo: cuenta como aportación y está disponible al instante. */
+    fun deposit(id: AccountId, amount: Money) = operate { bank ->
+        bank.post(id, CashDeposit(container.today(), amount))
+        info.value = "Ingresados ${Fmt.eur(amount)}: ya están disponibles en la cuenta."
     }
 
     fun rename(id: AccountId, name: String) = operate { it.rename(id, name) }

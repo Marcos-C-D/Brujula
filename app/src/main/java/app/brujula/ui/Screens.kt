@@ -30,7 +30,8 @@ import java.time.temporal.ChronoUnit
 // ------------------------------------------------------------------ Inicio
 
 @Composable
-fun HomeScreen(d: HomeData, goAccounts: () -> Unit) {
+fun HomeScreen(c: UiController, d: HomeData, goAccounts: () -> Unit) {
+    val depositOpen = remember { mutableStateOf(false) }
     val v = d.valuation
     if (v == null) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -43,11 +44,16 @@ fun HomeScreen(d: HomeData, goAccounts: () -> Unit) {
         return
     }
     val name = d.accounts.firstOrNull { it.id == d.selectedId }?.name ?: ""
+    val selectedId = d.selectedId
+    if (depositOpen.value && selectedId != null) {
+        DepositDialog(name, { depositOpen.value = false }) { m -> c.deposit(selectedId, m); depositOpen.value = false }
+    }
     LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
         item {
             Text(name, style = MaterialTheme.typography.bodyMedium)
             Text("Patrimonio total", style = MaterialTheme.typography.bodySmall)
             Text(Fmt.eur(v.netWorth), fontSize = 34.sp, fontWeight = FontWeight.Bold)
+            Button(onClick = { depositOpen.value = true }, modifier = Modifier.padding(top = 8.dp)) { Text("Añadir dinero") }
             if (!v.complete) Notice("Falta el precio de ${v.missingPrices.size} activo(s) en cartera: su valor no está incluido. Actualiza los precios en Más › Diagnóstico.")
             if (v.cash.isNegative) Notice("El efectivo es negativo (por ejemplo tras pagar impuestos). No podrás comprar hasta que vuelva a haber saldo.")
         }

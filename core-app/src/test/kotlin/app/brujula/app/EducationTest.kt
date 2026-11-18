@@ -72,7 +72,8 @@ class EducationTest {
         val texto = Education.topics.joinToString(" ") { t -> t.sections.joinToString(" ") { it.paragraphs.joinToString(" ") } }
         // plazos de fondos por defecto y escala: si cambian en el código, estas pruebas avisan de que el texto está desactualizado
         val s = app.brujula.trading.SettlementRules()
-        assertTrue(texto.contains("compra ${s.fundBuyDays}, reembolso ${s.fundRedeemDays} y traspaso ${s.fundTransferDays}"))
+        assertEquals(1..2, s.fundRandomDays) // la guía dice «entre 1 y 2 días hábiles»
+        assertTrue(texto.contains("entre 1 y 2 días hábiles"))
         assertTrue(texto.contains("30 % a partir de 300.000 €"))
         assertEquals(TaxRules().scale(2026).last().rate, java.math.BigDecimal("0.30"))
         assertTrue(AssetCatalog.DEFAULT.isNotEmpty())

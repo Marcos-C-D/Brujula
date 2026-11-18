@@ -88,7 +88,7 @@ private fun Content(c: UiController, context: Context) {
         SubScreen.Learn -> LearnScreen(c)
         is SubScreen.Topic -> TopicScreen(s.id)
         SubScreen.None -> when (c.tab.value) {
-            Tab.HOME -> HomeScreen(d) { c.sub.value = SubScreen.Accounts }
+            Tab.HOME -> HomeScreen(c, d) { c.sub.value = SubScreen.Accounts }
             Tab.PORTFOLIO -> PortfolioScreen(d)
             Tab.MARKETS -> MarketsScreen(d) { c.openAsset(it) }
             Tab.OPERATIONS -> OperationsScreen(c)
